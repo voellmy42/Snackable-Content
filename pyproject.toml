@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "marketing_ai"
+version = "0.1.0"
+description = "marketing-ai using crewAI"
+authors = ["Your Name <you@example.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<=3.13"
+crewai = { extras = ["tools"], version = ">=0.55.2,<1.0.0" }
+
+
+[tool.poetry.scripts]
+marketing_ai = "marketing_ai.main:run"
+run_crew = "marketing_ai.main:run"
+train = "marketing_ai.main:train"
+replay = "marketing_ai.main:replay"
+test = "marketing_ai.main:test"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

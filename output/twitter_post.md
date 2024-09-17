@@ -1,0 +1,1 @@
+"Did you know? The Roman Empire was founded in 27 BC & expanded across Europe, North Africa & Asia! With a complex government, fair justice system, impressive architecture & engineering feats, the Romans left an enduring legacy that shapes modern culture, law & language today #RomanEmpire #History"

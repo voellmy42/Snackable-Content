@@ -1,0 +1,25 @@
+research_task:
+  description: >
+    Conduct a thorough research about {topic}
+    Make sure you find any interesting and relevant information given
+    the current year is 2024.
+  expected_output: >
+    A list with 10 bullet points of the most relevant information about {topic}
+  agent: researcher
+
+write_twitter_post:
+  description: >
+    Write Twitter copy about {topic} based on the research output {research}.
+    The copy should be a concise message that is maximum 280 characters.
+  expected_output: >
+    A Twitter post with a maximum of 280 characters
+  agent: social_media_manager
+
+write_linkedin_post:
+  description: >
+    Write LinkedIn copy about {topic} based on the research output {research}.
+    The copy should be a concise message that is maximum 3000 characters.
+    Make use of emojis (only in the beginning of a paragraph) and hashtags (at the end of the post).
+  expected_output: >
+    A LinkedIn post with a maximum of 3000 characters
+  agent: social_media_manager
