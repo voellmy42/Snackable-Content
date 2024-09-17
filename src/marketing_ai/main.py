@@ -11,9 +11,21 @@ def run():
     """
     Run the crew.
     """
+    print("WELCOME TO THE MARKETING AI CREW - ENTER A TOPIC AND WE WILL PRODUCE A WELL RESEARCHED LINKEDIN AND X POST FOR YOU!")
+    
     user_input = input("Enter a topic:\n")
+    description = input("Enter your thoughts on the topic:\n")
+    style = input("How formal do you want the post to be? (1-5):\n")
+    target_audience = input("What is the target audience for this post?:\n")
+    language = input("What language do you want the post to be in?:\n")
+
+
     inputs = {
         'topic': user_input,
+        'description': description,
+        'style': style,
+        'target_audience': target_audience,
+        'language': language,
         'research': 'output/research.md'
     }
     MarketingAiCrew().crew().kickoff(inputs=inputs)
