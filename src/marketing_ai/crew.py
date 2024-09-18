@@ -1,5 +1,7 @@
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
+from crewai_tools import ScrapeWebsiteTool
+
 
 # Uncomment the following line to use an example of a custom tool
 # from marketing_ai.tools.custom_tool import MyCustomTool
@@ -15,15 +17,23 @@ class MarketingAiCrew():
 	def researcher(self) -> Agent:
 		return Agent(
 			config=self.agents_config['researcher'],
-			# tools=[MyCustomTool()], # Example of custom tool, loaded on the beginning of file
-			llm="ollama/llama3.1",
+			llm="gpt-4o-mini",
 			verbose=True
 		)
+	
+	@agent
+	def blog_writer(self) -> Agent:
+		return Agent(
+			config=self.agents_config['blog_writer'],
+			llm="gpt-4o-mini",
+			verbose=True
+		)
+
 	@agent
 	def social_media_manager(self) -> Agent:
 		return Agent(
 			config=self.agents_config['social_media_manager'],
-			llm="ollama/llama3.1",
+			llm="gpt-4o-mini",
 			verbose=True
 		)
 
@@ -34,6 +44,13 @@ class MarketingAiCrew():
 			output_file='output/research.md'
 		)
 
+	@task
+	def write_blog_post(self) -> Task:
+		return Task(
+			config=self.tasks_config['write_blog_post'],
+			output_file='output/blog_post.md'
+		)
+	
 	@task
 	def write_twitter_post(self) -> Task:
 		return Task(
