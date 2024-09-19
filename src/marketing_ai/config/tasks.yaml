@@ -9,7 +9,9 @@ research_task:
 
 write_blog_post:
   description: >
-    Write a blog post about {topic} based on the research output: {research}.
+    Write a blog post about {topic} based on the findings of the research output: {research}.
+    As it needs to be an interesting read, don't create too many short chapters that break the flow of the text.
+    Try to tell a story that is easy to understand and follow.
     Ensure that the post is written in a clear and concise manner that is easy to understand.
     Try to put information in context or a relatable example, so the user can understand the information better.
     Try to incorporate the authors thoughts in the post: {description} //

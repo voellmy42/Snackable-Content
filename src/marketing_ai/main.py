@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import sys
 from marketing_ai.crew import MarketingAiCrew
-from crewai_tools import CSVSearchTool
 
 # This main file is intended to be a way for your to run your
 # crew locally, so refrain from adding necessary logic into this file.
@@ -36,10 +35,10 @@ def train():
     """
     print("WELCOME TO THE MARKETING AI CREW - TRAINING THE CREW")
     
-    user_input = "Die Wichtigkeit der Qualität im Möbelhandel"
-    description = "Es ist wichtig, dass wir uns um die Qualität im Möbelhandel kümmern, denn das ist ein wichtiger Aspekt für uns als Käufer und Verkäufer."
-    target_audience = "Möbelkäufer und Verkäufer"
-    language = "german"
+    user_input = "ANYmal - The Autonomous Industrial Inspection Robot"
+    description = "Highlight the benefits of ANYmal for industrial inspection like it' AI-driven mobility, I67 ruggedness"
+    target_audience = "Industrial Inspectors Managers"
+    language = "english"
 
 
     inputs = {
