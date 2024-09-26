@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
+const API_URL = 'http://localhost:5001';
+
 const MarketingAIInterface = () => {
   const [inputs, setInputs] = useState({
     topic: '',
@@ -10,6 +12,7 @@ const MarketingAIInterface = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [output, setOutput] = useState(null);
+  const [error, setError] = useState(null);
 
   const handleInputChange = (e) => {
     setInputs({ ...inputs, [e.target.name]: e.target.value });
@@ -18,18 +21,32 @@ const MarketingAIInterface = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
     try {
-      const response = await axios.post('/api/generate', inputs);
+      console.log('Sending request with inputs:', inputs);
+      const response = await axios.post(`${API_URL}/api/generate`, inputs);
+      console.log('Received response:', response.data);
       setOutput(response.data);
     } catch (error) {
       console.error('Error:', error);
+      if (error.response) {
+        console.error('Error data:', error.response.data);
+        console.error('Error status:', error.response.status);
+        console.error('Error headers:', error.response.headers);
+        setError(`Server error: ${error.response.status}`);
+      } else if (error.request) {
+        console.error('Error request:', error.request);
+        setError('No response received from server');
+      } else {
+        console.error('Error message:', error.message);
+        setError('Error sending request');
+      }
     }
     setIsLoading(false);
   };
 
   const openFile = (filePath) => {
-    // This is a placeholder. You'll need to implement file opening/downloading based on your backend setup.
-    console.log(`Opening file: ${filePath}`);
+    window.open(`${API_URL}${filePath}`, '_blank');
   };
 
   return (
@@ -66,6 +83,12 @@ const MarketingAIInterface = () => {
           <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
             <div className="bg-blue-600 h-2.5 rounded-full w-full animate-pulse"></div>
           </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+          {error}
         </div>
       )}
 
