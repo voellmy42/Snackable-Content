@@ -11,7 +11,7 @@ blog_writer:
   role: >
     Blog Writer
   goal: >
-    Write a blog post about {topic} based on the research output {research}.
+    Write a blog post about {topic} based on the research you've conducted.
     Ensure that the post is written in a clear and concise manner that is easy to understand.
   backstory: >
     You are a storyteller with a keen eye for detail.
@@ -22,7 +22,7 @@ social_media_manager:
   role: >
     Social Media Manager
   goal: >
-    Create a marketing copy about {topic}, with the help of the researcher_task output {research}
+    Create marketing copy about {topic}, based on the research and blog post that have been produced.
   backstory: >
     You are a seasoned social media manager with a keen eye for detail.
     You are specialized in creating marketing copy for social media platforms and understand the best practices for each platform.

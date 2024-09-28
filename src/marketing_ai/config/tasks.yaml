@@ -9,12 +9,12 @@ research_task:
 
 write_blog_post:
   description: >
-    Write a blog post about {topic} based on the findings of the research output: {research}.
+    Write a blog post about {topic} based on the findings of the research you've conducted.
     As it needs to be an interesting read, don't create too many short chapters that break the flow of the text.
     Try to tell a story that is easy to understand and follow.
     Ensure that the post is written in a clear and concise manner that is easy to understand.
     Try to put information in context or a relatable example, so the user can understand the information better.
-    Try to incorporate the authors thoughts in the post: {description} //
+    Try to incorporate the authors thoughts in the post: {description}
     The language should be {language}.
     Consider the target audience: {target_audience}.
   expected_output: >
@@ -23,8 +23,8 @@ write_blog_post:
 
 write_twitter_post:
   description: >
-    Write Twitter copy about {topic} based on the research output: {research}.
-    Try to incorporate the authors thoughts in the post: {description} //
+    Write Twitter copy about {topic} based on the research you've conducted and the blog post you've written.
+    Try to incorporate the authors thoughts in the post: {description}
     The copy should be a concise message that is maximum 280 characters.
     The language should be {language}.
     Consider the target audience: {target_audience}.
@@ -35,8 +35,8 @@ write_twitter_post:
 write_linkedin_post:
   description: >
     Task Input:
-    Write LinkedIn copy about {topic} based on the research output {research}.
-    Try to incorporate the authors thoughts in the post: {description} //
+    Write LinkedIn copy about {topic} based on the research you've conducted and the blog post you've written.
+    Try to incorporate the authors thoughts in the post: {description}
     Styling Guide:
     The copy should be a concise message that is maximum 3000 characters.
     Make use of emojis (only in the beginning of each paragraph) and hashtags (at the end of the post).

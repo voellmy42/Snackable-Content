@@ -102,7 +102,7 @@ const MarketingAIInterface = () => {
                 onClick={() => openFile(value)}
                 className="block w-full text-left px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded"
               >
-                {key}: {value}
+                {key.replace('_', ' ')}: View
               </button>
             ))}
           </div>
