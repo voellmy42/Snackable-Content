@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { ChakraProvider, Box, VStack, Heading, Text, Input, Textarea, Button, useColorMode, useColorModeValue, Tooltip, Progress, Alert, AlertIcon, Accordion, AccordionItem, AccordionButton, AccordionPanel, AccordionIcon } from "@chakra-ui/react";
+import { ChakraProvider, Box, VStack, Heading, Text, Input, Textarea, Button, useColorMode, useColorModeValue, Tooltip, Progress, Alert, AlertIcon, SimpleGrid } from "@chakra-ui/react";
 import { SunIcon, MoonIcon } from '@chakra-ui/icons';
 import axios from 'axios';
+import FilePreview from './FilePreview';
 
 const API_URL = 'http://localhost:5001';
 
@@ -13,7 +14,7 @@ const MarketingAIInterface = () => {
     language: ''
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [output, setOutput] = useState(null);
+  const [fileContents, setFileContents] = useState({});
   const [error, setError] = useState(null);
   const { colorMode, toggleColorMode } = useColorMode();
   const bgColor = useColorModeValue("gray.50", "gray.800");
@@ -27,89 +28,87 @@ const MarketingAIInterface = () => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setFileContents({});
     try {
       const response = await axios.post(`${API_URL}/api/generate`, inputs);
-      setOutput(response.data);
+
+      // Fetch the content of each generated file
+      const contents = {};
+      for (const [key, filePath] of Object.entries(response.data)) {
+        const fileResponse = await axios.get(`${API_URL}${filePath}`);
+        contents[key] = fileResponse.data;
+      }
+      setFileContents(contents);
     } catch (error) {
       setError(error.response?.data?.error || 'An error occurred');
     }
     setIsLoading(false);
   };
 
-  const openFile = (filePath) => {
-    window.open(`${API_URL}${filePath}`, '_blank');
-  };
-
   return (
     <ChakraProvider>
       <Box minHeight="100vh" bg={bgColor} color={color} p={8}>
-        <VStack spacing={8} align="stretch" maxWidth="800px" margin="auto">
+        <VStack spacing={8} align="stretch" maxWidth="1000px" margin="auto">
           <Heading as="h1" size="2xl" textAlign="center">Marketing AI</Heading>
           <Button onClick={toggleColorMode} alignSelf="flex-end">
             {colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
           </Button>
-          <form onSubmit={handleSubmit}>
-            <VStack spacing={4}>
-              {Object.entries(inputs).map(([key, value]) => (
-                <Tooltip key={key} label={getTooltip(key)} placement="top-start">
-                  <Box width="100%">
-                    <Text mb={2} fontWeight="bold">{formatLabel(key)}</Text>
-                    {key === 'description' ? (
-                      <Textarea
-                        name={key}
-                        value={value}
-                        onChange={handleInputChange}
-                        placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
-                      />
-                    ) : (
-                      <Input
-                        name={key}
-                        value={value}
-                        onChange={handleInputChange}
-                        placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
-                      />
-                    )}
-                  </Box>
-                </Tooltip>
-              ))}
-              <Button type="submit" colorScheme="blue" isLoading={isLoading} loadingText="Generating...">
-                Generate
-              </Button>
-            </VStack>
-          </form>
+          <SimpleGrid columns={[1, null, 2]} spacing={8}>
+            <Box>
+              <form onSubmit={handleSubmit}>
+                <VStack spacing={4} align="stretch">
+                  {Object.entries(inputs).map(([key, value]) => (
+                    <Tooltip key={key} label={getTooltip(key)} placement="top-start">
+                      <Box>
+                        <Text mb={2} fontWeight="bold">{formatLabel(key)}</Text>
+                        {key === 'description' ? (
+                          <Textarea
+                            name={key}
+                            value={value}
+                            onChange={handleInputChange}
+                            placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
+                          />
+                        ) : (
+                          <Input
+                            name={key}
+                            value={value}
+                            onChange={handleInputChange}
+                            placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
+                          />
+                        )}
+                      </Box>
+                    </Tooltip>
+                  ))}
+                  <Button type="submit" colorScheme="blue" isLoading={isLoading} loadingText="Generating...">
+                    Generate
+                  </Button>
+                </VStack>
+              </form>
+            </Box>
+            <Box>
+              {isLoading && <Progress size="xs" isIndeterminate />}
 
-          {isLoading && <Progress size="xs" isIndeterminate />}
+              {error && (
+                <Alert status="error">
+                  <AlertIcon />
+                  {error}
+                </Alert>
+              )}
 
-          {error && (
-            <Alert status="error">
-              <AlertIcon />
-              {error}
-            </Alert>
-          )}
-
-          {output && (
-            <Accordion allowToggle>
-              <AccordionItem>
-                <h2>
-                  <AccordionButton>
-                    <Box flex="1" textAlign="left">
-                      Generated Content
-                    </Box>
-                    <AccordionIcon />
-                  </AccordionButton>
-                </h2>
-                <AccordionPanel pb={4}>
-                  <VStack spacing={2} align="stretch">
-                    {Object.entries(output).map(([key, value]) => (
-                      <Button key={key} onClick={() => openFile(value)} variant="outline">
-                        {formatLabel(key)}
-                      </Button>
-                    ))}
-                  </VStack>
-                </AccordionPanel>
-              </AccordionItem>
-            </Accordion>
-          )}
+              {Object.keys(fileContents).length > 0 && (
+                <VStack spacing={6} align="stretch">
+                  <Heading as="h2" size="lg">Generated Content</Heading>
+                  {Object.entries(fileContents).map(([key, content]) => (
+                    <FilePreview
+                      key={key}
+                      fileName={formatLabel(key)}
+                      content={content}
+                    />
+                  ))}
+                </VStack>
+              )}
+            </Box>
+          </SimpleGrid>
         </VStack>
       </Box>
     </ChakraProvider>
