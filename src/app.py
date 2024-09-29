@@ -1,38 +1,79 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
+from flask_cors import CORS
 from marketing_ai.crew import MarketingAiCrew
-import json
+import os
+import logging
+import traceback
 
 app = Flask(__name__)
+CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+
+# Define the base directory for output files
+OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'output'))
 
 @app.route('/api/generate', methods=['POST'])
 def generate_content():
+    app.logger.info('Received a request to /api/generate')
     data = request.json
+    app.logger.info(f'Request data: {data}')
     
-    # Extract inputs from the request
     inputs = {
         'topic': data.get('topic', ''),
         'description': data.get('description', ''),
-        'target_audience': data.get('target_audience', ''),
+        'target_audience': data.get('targetAudience', ''),
         'language': data.get('language', ''),
-        'research': 'output/research.md'
     }
     
+    app.logger.info(f'Processed inputs: {inputs}')
+    
     try:
-        # Create an instance of MarketingAiCrew and call kickoff
-        result = MarketingAiCrew().crew().kickoff(inputs=inputs)
+        app.logger.info('Initializing MarketingAiCrew')
+        crew = MarketingAiCrew()
+        app.logger.info('MarketingAiCrew initialized successfully')
+
+        app.logger.info('Creating crew')
+        crew_instance = crew.crew()
+        app.logger.info('Crew created successfully')
+
+        app.logger.info('Starting crew kickoff')
+        result = crew_instance.kickoff(inputs=inputs)
+        app.logger.info(f'Crew kickoff completed. Result: {result}')
         
-        # Convert the result to a JSON-serializable format
-        result_dict = result.to_dict()
-        
-        # Prepare the response
-        response = {
-            "result": result_dict,
-            "research_path": inputs['research']
+        output = {
+            "research": "/api/output/research.md",
+            "blog_post": "/api/output/blog_post.md",
+            "linkedin_post": "/api/output/linkedin_post.md",
+            "twitter_post": "/api/output/twitter_post.md"
         }
         
-        return jsonify(response), 200
+        app.logger.info(f'Sending response: {output}')
+        return jsonify(output), 200
     except Exception as e:
+        app.logger.error(f'An error occurred: {str(e)}')
+        app.logger.error(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/output/<path:filename>')
+def serve_file(filename):
+    app.logger.info(f'Received request for file: {filename}')
+    try:
+        # Ensure the filename doesn't contain any path traversal
+        filename = os.path.basename(filename)
+        file_path = os.path.join(OUTPUT_DIR, filename)
+        
+        app.logger.info(f'Attempting to serve file: {file_path}')
+        
+        if not os.path.exists(file_path):
+            app.logger.error(f'File not found: {file_path}')
+            return jsonify({"error": "File not found"}), 404
+        
+        return send_file(file_path, as_attachment=False)
+    except Exception as e:
+        app.logger.error(f'Error serving file: {str(e)}')
+        return jsonify({"error": "Error serving file"}), 500
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5001)
