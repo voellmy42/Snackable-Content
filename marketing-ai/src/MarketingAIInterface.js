@@ -16,9 +16,12 @@ const MarketingAIInterface = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [fileContents, setFileContents] = useState({});
   const [error, setError] = useState(null);
+  const [verboseOutput, setVerboseOutput] = useState([]);
+  
   const { colorMode, toggleColorMode } = useColorMode();
   const bgColor = useColorModeValue("gray.50", "gray.800");
   const color = useColorModeValue("gray.800", "white");
+  const verboseOutputBgColor = useColorModeValue("gray.100", "gray.700");
 
   const handleInputChange = (e) => {
     setInputs({ ...inputs, [e.target.name]: e.target.value });
@@ -29,14 +32,18 @@ const MarketingAIInterface = () => {
     setIsLoading(true);
     setError(null);
     setFileContents({});
+    setVerboseOutput([]);
     try {
       const response = await axios.post(`${API_URL}/api/generate`, inputs);
+      setVerboseOutput(response.data.verbose_output);
 
       // Fetch the content of each generated file
       const contents = {};
       for (const [key, filePath] of Object.entries(response.data)) {
-        const fileResponse = await axios.get(`${API_URL}${filePath}`);
-        contents[key] = fileResponse.data;
+        if (key !== 'verbose_output') {
+          const fileResponse = await axios.get(`${API_URL}${filePath}`);
+          contents[key] = fileResponse.data;
+        }
       }
       setFileContents(contents);
     } catch (error) {
@@ -85,6 +92,7 @@ const MarketingAIInterface = () => {
                 </VStack>
               </form>
             </Box>
+            
             <Box>
               {isLoading && <Progress size="xs" isIndeterminate />}
 
@@ -95,8 +103,25 @@ const MarketingAIInterface = () => {
                 </Alert>
               )}
 
+              {verboseOutput.length > 0 && (
+                <Box mt={4}>
+                  <Heading as="h3" size="md" mb={2}>Verbose Output</Heading>
+                  <Box
+                    bg={verboseOutputBgColor}
+                    p={4}
+                    borderRadius="md"
+                    overflow="auto"
+                    maxHeight="400px"
+                  >
+                    <pre>
+                      <code>{verboseOutput.join('')}</code>
+                    </pre>
+                  </Box>
+                </Box>
+              )}
+
               {Object.keys(fileContents).length > 0 && (
-                <VStack spacing={6} align="stretch">
+                <VStack spacing={6} align="stretch" mt={4}>
                   <Heading as="h2" size="lg">Generated Content</Heading>
                   {Object.entries(fileContents).map(([key, content]) => (
                     <FilePreview

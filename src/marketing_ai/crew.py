@@ -1,8 +1,20 @@
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 import logging
+import io
+from contextlib import redirect_stdout
 
 logger = logging.getLogger(__name__)
+
+class OutputCapture:
+    def __init__(self):
+        self.output = []
+
+    def write(self, text):
+        self.output.append(text)
+
+    def flush(self):
+        pass
 
 @CrewBase
 class MarketingAiCrew():
@@ -11,6 +23,7 @@ class MarketingAiCrew():
     def __init__(self):
         logger.info('Initializing MarketingAiCrew')
         super().__init__()
+        self.output_capture = OutputCapture()
         logger.info('MarketingAiCrew initialized')
 
     @agent
@@ -98,3 +111,9 @@ class MarketingAiCrew():
         )
         logger.info('MarketingAi crew created successfully')
         return crew
+
+    def run_crew(self, inputs):
+        crew_instance = self.crew()
+        with redirect_stdout(self.output_capture):
+            result = crew_instance.kickoff(inputs=inputs)
+        return result, self.output_capture.output

@@ -34,19 +34,16 @@ def generate_content():
         crew = MarketingAiCrew()
         app.logger.info('MarketingAiCrew initialized successfully')
 
-        app.logger.info('Creating crew')
-        crew_instance = crew.crew()
-        app.logger.info('Crew created successfully')
-
-        app.logger.info('Starting crew kickoff')
-        result = crew_instance.kickoff(inputs=inputs)
-        app.logger.info(f'Crew kickoff completed. Result: {result}')
+        app.logger.info('Running crew')
+        result, captured_output = crew.run_crew(inputs)
+        app.logger.info('Crew run completed')
         
         output = {
             "research": "/api/output/research.md",
             "blog_post": "/api/output/blog_post.md",
             "linkedin_post": "/api/output/linkedin_post.md",
-            "twitter_post": "/api/output/twitter_post.md"
+            "twitter_post": "/api/output/twitter_post.md",
+            "verbose_output": captured_output
         }
         
         app.logger.info(f'Sending response: {output}')
