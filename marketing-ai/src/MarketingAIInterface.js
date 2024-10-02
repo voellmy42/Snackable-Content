@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ChakraProvider, Box, VStack, Heading, Text, Input, Textarea, Button, useColorMode, useColorModeValue, Tooltip, Progress, Alert, AlertIcon, SimpleGrid } from "@chakra-ui/react";
+import React, { useState, useMemo, useCallback } from 'react';
+import { ChakraProvider, Box, VStack, Heading, Text, Input, Textarea, Button, useColorMode, useColorModeValue, Progress, Alert, AlertIcon, SimpleGrid, Container, Fade } from "@chakra-ui/react";
 import { SunIcon, MoonIcon } from '@chakra-ui/icons';
 import axios from 'axios';
 import FilePreview from './FilePreview';
@@ -19,13 +19,15 @@ const MarketingAIInterface = () => {
   const [verboseOutput, setVerboseOutput] = useState([]);
   
   const { colorMode, toggleColorMode } = useColorMode();
+
   const bgColor = useColorModeValue("gray.50", "gray.800");
   const color = useColorModeValue("gray.800", "white");
-  const verboseOutputBgColor = useColorModeValue("gray.100", "gray.700");
+  const cardBgColor = useColorModeValue("white", "gray.700");
+  const verboseOutputBgColor = useColorModeValue("gray.100", "gray.600");
 
-  const handleInputChange = (e) => {
-    setInputs({ ...inputs, [e.target.name]: e.target.value });
-  };
+  const handleInputChange = useCallback((e) => {
+    setInputs(prevInputs => ({ ...prevInputs, [e.target.name]: e.target.value }));
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,7 +39,6 @@ const MarketingAIInterface = () => {
       const response = await axios.post(`${API_URL}/api/generate`, inputs);
       setVerboseOutput(response.data.verbose_output);
 
-      // Fetch the content of each generated file
       const contents = {};
       for (const [key, filePath] of Object.entries(response.data)) {
         if (key !== 'verbose_output') {
@@ -52,89 +53,107 @@ const MarketingAIInterface = () => {
     setIsLoading(false);
   };
 
+  const inputFields = useMemo(() => (
+    Object.entries(inputs).map(([key, value]) => (
+      <Box key={key}>
+        <Text mb={2} fontWeight="bold">{formatLabel(key)}</Text>
+        {key === 'description' ? (
+          <Textarea
+            name={key}
+            value={value}
+            onChange={handleInputChange}
+            placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
+            bg={cardBgColor}
+          />
+        ) : (
+          <Input
+            name={key}
+            value={value}
+            onChange={handleInputChange}
+            placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
+            bg={cardBgColor}
+          />
+        )}
+      </Box>
+    ))
+  ), [inputs, handleInputChange, cardBgColor]);
+
   return (
     <ChakraProvider>
-      <Box minHeight="100vh" bg={bgColor} color={color} p={8}>
-        <VStack spacing={8} align="stretch" maxWidth="1000px" margin="auto">
-          <Heading as="h1" size="2xl" textAlign="center">Marketing AI</Heading>
-          <Button onClick={toggleColorMode} alignSelf="flex-end">
-            {colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
-          </Button>
-          <SimpleGrid columns={[1, null, 2]} spacing={8}>
-            <Box>
-              <form onSubmit={handleSubmit}>
-                <VStack spacing={4} align="stretch">
-                  {Object.entries(inputs).map(([key, value]) => (
-                    <Tooltip key={key} label={getTooltip(key)} placement="top-start">
-                      <Box>
-                        <Text mb={2} fontWeight="bold">{formatLabel(key)}</Text>
-                        {key === 'description' ? (
-                          <Textarea
-                            name={key}
-                            value={value}
-                            onChange={handleInputChange}
-                            placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
-                          />
-                        ) : (
-                          <Input
-                            name={key}
-                            value={value}
-                            onChange={handleInputChange}
-                            placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
-                          />
-                        )}
-                      </Box>
-                    </Tooltip>
-                  ))}
-                  <Button type="submit" colorScheme="blue" isLoading={isLoading} loadingText="Generating...">
-                    Generate
-                  </Button>
-                </VStack>
-              </form>
-            </Box>
-            
-            <Box>
-              {isLoading && <Progress size="xs" isIndeterminate />}
-
-              {error && (
-                <Alert status="error">
-                  <AlertIcon />
-                  {error}
-                </Alert>
-              )}
-
-              {verboseOutput.length > 0 && (
-                <Box mt={4}>
-                  <Heading as="h3" size="md" mb={2}>Verbose Output</Heading>
-                  <Box
-                    bg={verboseOutputBgColor}
-                    p={4}
-                    borderRadius="md"
-                    overflow="auto"
-                    maxHeight="400px"
-                  >
-                    <pre>
-                      <code>{verboseOutput.join('')}</code>
-                    </pre>
+      <Box minHeight="100vh" bg={bgColor} color={color} py={8}>
+        <Container maxWidth="1200px">
+          <VStack spacing={8} align="stretch">
+            <Heading as="h1" size="2xl" textAlign="center">Marketing AI</Heading>
+            <Button onClick={toggleColorMode} alignSelf="flex-end" size="sm">
+              {colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
+            </Button>
+            <SimpleGrid columns={[1, null, 2]} spacing={8}>
+              <Box bg={cardBgColor} p={6} borderRadius="lg" boxShadow="md">
+                <form onSubmit={handleSubmit}>
+                  <VStack spacing={4} align="stretch">
+                    {inputFields}
+                    <Button type="submit" colorScheme="blue" isLoading={isLoading} loadingText="Generating...">
+                      Generate
+                    </Button>
+                  </VStack>
+                </form>
+              </Box>
+              
+              <Box>
+                {isLoading && (
+                  <Box mb={4}>
+                    <Text mb={2}>Generating content...</Text>
+                    <Progress size="xs" isIndeterminate colorScheme="blue" />
                   </Box>
-                </Box>
-              )}
+                )}
 
-              {Object.keys(fileContents).length > 0 && (
-                <VStack spacing={6} align="stretch" mt={4}>
-                  <Heading as="h2" size="lg">Generated Content</Heading>
+                {error && (
+                  <Alert status="error" mb={4}>
+                    <AlertIcon />
+                    {error}
+                  </Alert>
+                )}
+
+                {verboseOutput.length > 0 && (
+                  <Box mb={4} bg={cardBgColor} p={4} borderRadius="lg" boxShadow="md">
+                    <Heading as="h3" size="md" mb={2}>Agent Conversation</Heading>
+                    <Box
+                      bg={verboseOutputBgColor}
+                      p={4}
+                      borderRadius="md"
+                      overflow="auto"
+                      maxHeight="300px"
+                      fontSize="sm"
+                      fontFamily="monospace"
+                    >
+                      {verboseOutput.map((output, index) => (
+                        <Fade in={true} key={index}>
+                          <Text mb={2}>{output}</Text>
+                        </Fade>
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            </SimpleGrid>
+
+            {Object.keys(fileContents).length > 0 && (
+              <VStack spacing={6} align="stretch" mt={4}>
+                <Heading as="h2" size="lg">Generated Content</Heading>
+                <SimpleGrid columns={[1, null, 2]} spacing={6}>
                   {Object.entries(fileContents).map(([key, content]) => (
                     <FilePreview
                       key={key}
                       fileName={formatLabel(key)}
                       content={content}
+                      bg={cardBgColor}
                     />
                   ))}
-                </VStack>
-              )}
-            </Box>
-          </SimpleGrid>
-        </VStack>
+                </SimpleGrid>
+              </VStack>
+            )}
+          </VStack>
+        </Container>
       </Box>
     </ChakraProvider>
   );
@@ -142,16 +161,6 @@ const MarketingAIInterface = () => {
 
 const formatLabel = (key) => {
   return key.split(/(?=[A-Z])/).join(' ').replace(/^\w/, c => c.toUpperCase());
-};
-
-const getTooltip = (key) => {
-  const tooltips = {
-    topic: "Enter the main subject of your content",
-    description: "Provide additional details or context about the topic",
-    targetAudience: "Specify who the content is intended for",
-    language: "Enter the desired language for the generated content"
-  };
-  return tooltips[key] || "";
 };
 
 export default MarketingAIInterface;

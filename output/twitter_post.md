@@ -1,1 +1,1 @@
-The Roman Empire: a saga of triumph, culture, and transformation! From iconic structures to groundbreaking laws, its legacy shapes our world today. Explore how this ancient civilization rose and fell, leaving an enduring impact! #RomanEmpire #History
+Discover how Swiss democracy empowers citizens! 🗳️ With direct votes on laws, robust federalism, and a commitment to consensus politics, the Swiss model fosters inclusivity and engagement. 🌍 Let’s learn from their dynamic approach to shaping a sustainable future! #SwissDemocracy #DirectDemocracy
