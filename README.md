@@ -1,54 +1,57 @@
-# MarketingAi Crew
+# Marketing AI Project
 
-Welcome to the MarketingAi Crew project, powered by [crewAI](https://crewai.com). This template is designed to help you set up a multi-agent AI system with ease, leveraging the powerful and flexible framework provided by crewAI. Our goal is to enable your agents to collaborate effectively on complex tasks, maximizing their collective intelligence and capabilities.
+This project consists of a React frontend and a Python backend that work together to generate marketing content using AI.
 
-## Installation
+## Project Structure
 
-Ensure you have Python >=3.10 <=3.13 installed on your system. This project uses [Poetry](https://python-poetry.org/) for dependency management and package handling, offering a seamless setup and execution experience.
-
-First, if you haven't already, install Poetry:
-
-```bash
-pip install poetry
+```
+project-root/
+├── frontend/
+│   ├── src/
+│   │   ├── App.js
+│   │   ├── MarketingAIInterface.js
+│   │   └── FilePreview.js
+│   ├── package.json
+│   └── README.md
+├── backend/
+│   ├── app.py
+│   ├── crew.py
+│   ├── main.py
+│   ├── tasks.yaml
+│   ├── agents.yaml
+│   └── requirements.txt
+├── .gitignore
+└── README.md
 ```
 
-Next, navigate to your project directory and install the dependencies:
+## Setup
 
-1. First lock the dependencies and install them by using the CLI command:
-```bash
-crewai install
-```
-### Customizing
+### Frontend
 
-**Add your `OPENAI_API_KEY` into the `.env` file**
+1. Navigate to the `frontend` directory
+2. Run `npm install` to install dependencies
+3. Run `npm start` to start the development server
 
-- Modify `src/marketing_ai/config/agents.yaml` to define your agents
-- Modify `src/marketing_ai/config/tasks.yaml` to define your tasks
-- Modify `src/marketing_ai/crew.py` to add your own logic, tools and specific args
-- Modify `src/marketing_ai/main.py` to add custom inputs for your agents and tasks
+### Backend
 
-## Running the Project
+1. Navigate to the `backend` directory
+2. Create a virtual environment: `python -m venv venv`
+3. Activate the virtual environment:
+   - On Windows: `venv\Scripts\activate`
+   - On macOS and Linux: `source venv/bin/activate`
+4. Install dependencies: `pip install -r requirements.txt`
+5. Run the backend server: `python app.py`
 
-To kickstart your crew of AI agents and begin task execution, run this from the root folder of your project:
+## Usage
 
-```bash
-$ crewai run
-```
+1. Start both the frontend and backend servers
+2. Open your browser and navigate to `http://localhost:3000`
+3. Fill in the required fields and click "Generate" to create marketing content
 
-This command initializes the marketing-ai Crew, assembling the agents and assigning them tasks as defined in your configuration.
+## Contributing
 
-This example, unmodified, will run the create a `report.md` file with the output of a research on LLMs in the root folder.
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
-## Understanding Your Crew
+## License
 
-The marketing-ai Crew is composed of multiple AI agents, each with unique roles, goals, and tools. These agents collaborate on a series of tasks, defined in `config/tasks.yaml`, leveraging their collective skills to achieve complex objectives. The `config/agents.yaml` file outlines the capabilities and configurations of each agent in your crew.
-
-## Support
-
-For support, questions, or feedback regarding the MarketingAi Crew or crewAI.
-- Visit our [documentation](https://docs.crewai.com)
-- Reach out to us through our [GitHub repository](https://github.com/joaomdmoura/crewai)
-- [Join our Discord](https://discord.com/invite/X4JWnZnxPb)
-- [Chat with our docs](https://chatg.pt/DWjSBZn)
-
-Let's create wonders together with the power and simplicity of crewAI.
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
