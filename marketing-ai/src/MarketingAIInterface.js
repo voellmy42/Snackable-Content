@@ -20,10 +20,12 @@ const MarketingAIInterface = () => {
   
   const { colorMode, toggleColorMode } = useColorMode();
 
-  const bgColor = useColorModeValue("gray.50", "gray.800");
+  const bgColor = useColorModeValue("white", "gray.800");
   const color = useColorModeValue("gray.800", "white");
   const cardBgColor = useColorModeValue("white", "gray.700");
-  const verboseOutputBgColor = useColorModeValue("gray.100", "gray.600");
+  const inputBgColor = useColorModeValue("white", "gray.700");
+  const inputBorderColor = useColorModeValue("gray.300", "gray.600");
+  const verboseOutputBgColor = useColorModeValue("gray.50", "gray.600");
 
   const handleInputChange = useCallback((e) => {
     setInputs(prevInputs => ({ ...prevInputs, [e.target.name]: e.target.value }));
@@ -63,7 +65,8 @@ const MarketingAIInterface = () => {
             value={value}
             onChange={handleInputChange}
             placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
-            bg={cardBgColor}
+            bg={inputBgColor}
+            borderColor={inputBorderColor}
           />
         ) : (
           <Input
@@ -71,24 +74,25 @@ const MarketingAIInterface = () => {
             value={value}
             onChange={handleInputChange}
             placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
-            bg={cardBgColor}
+            bg={inputBgColor}
+            borderColor={inputBorderColor}
           />
         )}
       </Box>
     ))
-  ), [inputs, handleInputChange, cardBgColor]);
+  ), [inputs, handleInputChange, inputBgColor, inputBorderColor]);
 
   return (
     <ChakraProvider>
       <Box minHeight="100vh" bg={bgColor} color={color} py={8}>
-        <Container maxWidth="1200px">
+        <Container maxWidth="1400px">
           <VStack spacing={8} align="stretch">
             <Heading as="h1" size="2xl" textAlign="center">Marketing AI</Heading>
             <Button onClick={toggleColorMode} alignSelf="flex-end" size="sm">
               {colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
             </Button>
             <SimpleGrid columns={[1, null, 2]} spacing={8}>
-              <Box bg={cardBgColor} p={6} borderRadius="lg" boxShadow="md">
+              <Box bg={cardBgColor} p={6} borderRadius="lg" boxShadow="md" borderColor={inputBorderColor} borderWidth={1}>
                 <form onSubmit={handleSubmit}>
                   <VStack spacing={4} align="stretch">
                     {inputFields}
@@ -115,7 +119,7 @@ const MarketingAIInterface = () => {
                 )}
 
                 {verboseOutput.length > 0 && (
-                  <Box mb={4} bg={cardBgColor} p={4} borderRadius="lg" boxShadow="md">
+                  <Box mb={4} bg={cardBgColor} p={4} borderRadius="lg" boxShadow="md" borderColor={inputBorderColor} borderWidth={1}>
                     <Heading as="h3" size="md" mb={2}>Agent Conversation</Heading>
                     <Box
                       bg={verboseOutputBgColor}
@@ -139,7 +143,7 @@ const MarketingAIInterface = () => {
 
             {Object.keys(fileContents).length > 0 && (
               <VStack spacing={6} align="stretch" mt={4}>
-                <Heading as="h2" size="lg">Generated Content</Heading>
+                <Heading as="h2" size="lg" color={color}>Generated Content</Heading>
                 <SimpleGrid columns={[1, null, 2]} spacing={6}>
                   {Object.entries(fileContents).map(([key, content]) => (
                     <FilePreview
@@ -147,6 +151,7 @@ const MarketingAIInterface = () => {
                       fileName={formatLabel(key)}
                       content={content}
                       bg={cardBgColor}
+                      borderColor={inputBorderColor}
                     />
                   ))}
                 </SimpleGrid>

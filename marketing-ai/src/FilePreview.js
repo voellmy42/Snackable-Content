@@ -1,11 +1,10 @@
 import React from 'react';
-import { Box, Button, Text, useClipboard, VStack, useToast, useColorModeValue } from "@chakra-ui/react";
+import { Box, Button, Text, useClipboard, VStack, useColorModeValue } from "@chakra-ui/react";
 
-const FilePreview = ({ fileName, content, bg }) => {
+const FilePreview = ({ fileName, content, bg, borderColor }) => {
   const { hasCopied, onCopy } = useClipboard(content);
-  const toast = useToast();
   const contentBgColor = useColorModeValue("gray.50", "gray.600");
-  const borderColor = useColorModeValue("gray.200", "gray.600");
+  const textColor = useColorModeValue("gray.800", "white");
 
   const handleDownload = () => {
     const blob = new Blob([content], { type: 'text/plain' });
@@ -18,27 +17,22 @@ const FilePreview = ({ fileName, content, bg }) => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    toast({
-      title: "File downloaded",
-      description: `${fileName} has been downloaded`,
-      status: "success",
-      duration: 2000,
-      isClosable: true,
-    });
+    console.log(`${fileName} has been downloaded`);
   };
 
   return (
     <Box borderWidth="1px" borderRadius="lg" p={4} borderColor={borderColor} bg={bg} boxShadow="md">
-      <Text fontWeight="bold" mb={2} fontSize="lg">{fileName}</Text>
+      <Text fontWeight="bold" mb={2} fontSize="lg" color={textColor}>{fileName}</Text>
       <Box 
         bg={contentBgColor} 
         p={4} 
         borderRadius="md" 
         overflow="auto" 
-        maxHeight="200px" 
+        maxHeight="400px" // Increased from 200px
         mb={4}
         fontSize="sm"
         fontFamily="monospace"
+        color={textColor}
         sx={{
           '&::-webkit-scrollbar': {
             width: '8px',
