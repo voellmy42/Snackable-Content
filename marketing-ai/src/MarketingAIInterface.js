@@ -1,10 +1,29 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { ChakraProvider, Box, VStack, Heading, Text, Input, Textarea, Button, useColorMode, useColorModeValue, Progress, Alert, AlertIcon, SimpleGrid, Container, Fade } from "@chakra-ui/react";
+import { ChakraProvider, Box, VStack, Heading, Text, Input, Textarea, Button, useColorMode, useColorModeValue, Progress, Alert, AlertIcon, SimpleGrid, Container, Fade, Avatar } from "@chakra-ui/react";
 import { SunIcon, MoonIcon } from '@chakra-ui/icons';
 import axios from 'axios';
 import FilePreview from './FilePreview';
 
 const API_URL = 'http://localhost:5001';
+
+const ChatMessage = ({ message, isAI }) => {
+  const bgColor = useColorModeValue(isAI ? "blue.100" : "green.100", isAI ? "blue.700" : "green.700");
+  const textColor = useColorModeValue("gray.800", "white");
+  const avatarBg = useColorModeValue(isAI ? "blue.500" : "green.500", isAI ? "blue.200" : "green.200");
+
+  return (
+    <Box display="flex" justifyContent={isAI ? "flex-start" : "flex-end"} mb={4}>
+      <Box maxWidth="70%" display="flex" flexDirection={isAI ? "row" : "row-reverse"}>
+        <Avatar bg={avatarBg} mr={isAI ? 2 : 0} ml={isAI ? 0 : 2}>
+          {isAI ? "AI" : "You"}
+        </Avatar>
+        <Box bg={bgColor} p={3} borderRadius="lg" color={textColor}>
+          <Text>{message}</Text>
+        </Box>
+      </Box>
+    </Box>
+  );
+};
 
 const MarketingAIInterface = () => {
   const [inputs, setInputs] = useState({
@@ -21,6 +40,7 @@ const MarketingAIInterface = () => {
   
   const { colorMode, toggleColorMode } = useColorMode();
   const eventSourceRef = useRef(null);
+  const chatContainerRef = useRef(null);
 
   const bgColor = useColorModeValue("white", "gray.800");
   const color = useColorModeValue("gray.800", "white");
@@ -127,6 +147,12 @@ const MarketingAIInterface = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [verboseOutput]);
+
   const inputFields = useMemo(() => (
     Object.entries(inputs).map(([key, value]) => (
       <Box key={key}>
@@ -194,17 +220,17 @@ const MarketingAIInterface = () => {
                   <Box mb={4} bg={cardBgColor} p={4} borderRadius="lg" boxShadow="md" borderColor={inputBorderColor} borderWidth={1}>
                     <Heading as="h3" size="md" mb={2}>Agent Conversation</Heading>
                     <Box
+                      ref={chatContainerRef}
                       bg={verboseOutputBgColor}
                       p={4}
                       borderRadius="md"
                       overflow="auto"
-                      maxHeight="300px"
+                      maxHeight="400px"
                       fontSize="sm"
-                      fontFamily="monospace"
                     >
                       {verboseOutput.map((output, index) => (
                         <Fade in={true} key={index}>
-                          <Text mb={2}>{output}</Text>
+                          <ChatMessage message={output} isAI={true} />
                         </Fade>
                       ))}
                     </Box>
