@@ -1,31 +1,72 @@
 from flask import Flask, request, jsonify, send_file, Response
 from flask_cors import CORS
+from flask_caching import Cache
 from marketing_ai.crew import MarketingAiCrew
 import os
 import logging
 import traceback
+import json
 import queue
 import threading
-import json
+import sys
+import io
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
+cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
 
 # Define the base directory for output files
 OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'output'))
 
-# Create a queue for storing crew output
-crew_output_queue = queue.Queue()
+# Global queue for storing messages
+message_queue = queue.Queue()
+
+class OutputCapture(io.StringIO):
+    def write(self, s):
+        super().write(s)
+        if s.strip():
+            message_queue.put(json.dumps({"type": "output", "data": s.strip()}))
+
+def generate_content_background(inputs):
+    try:
+        message_queue.put(json.dumps({"type": "status", "data": "Initializing AI Crew..."}))
+        crew = MarketingAiCrew()
+        message_queue.put(json.dumps({"type": "status", "data": "AI Crew initialized. Starting research..."}))
+
+        # Redirect stdout to our custom OutputCapture
+        old_stdout = sys.stdout
+        sys.stdout = OutputCapture()
+
+        try:
+            result = crew.run_crew(inputs)
+        finally:
+            # Restore stdout
+            captured_output = sys.stdout.getvalue()
+            sys.stdout = old_stdout
+
+        message_queue.put(json.dumps({"type": "status", "data": "Content generation completed. Preparing results..."}))
+        
+        output = {
+            "research": "/api/output/research.md",
+            "blog_post": "/api/output/blog_post.md",
+            "linkedin_post": "/api/output/linkedin_post.md",
+            "twitter_post": "/api/output/twitter_post.md",
+        }
+        
+        message_queue.put(json.dumps({"type": "complete", "data": output}))
+    except Exception as e:
+        app.logger.error(f'An error occurred: {str(e)}')
+        app.logger.error(traceback.format_exc())
+        message_queue.put(json.dumps({"type": "error", "data": str(e)}))
 
 @app.route('/api/generate', methods=['POST'])
 def generate_content():
-    logger.info('Received a request to /api/generate')
+    app.logger.info('Received a request to /api/generate')
     data = request.json
-    logger.info(f'Request data: {data}')
+    app.logger.info(f'Request data: {data}')
     
     inputs = {
         'topic': data.get('topic', ''),
@@ -34,79 +75,46 @@ def generate_content():
         'language': data.get('language', ''),
     }
     
-    logger.info(f'Processed inputs: {inputs}')
+    app.logger.info(f'Processed inputs: {inputs}')
     
-    def run_crew():
-        try:
-            logger.info('Initializing MarketingAiCrew')
-            crew = MarketingAiCrew()
-            logger.info('MarketingAiCrew initialized successfully')
-
-            logger.info('Running crew')
-            result, captured_output = crew.run_crew(inputs)
-            logger.info('Crew run completed')
-            
-            # Stream the captured output
-            for line in captured_output.split('\n'):
-                if line.strip():  # Only send non-empty lines
-                    message = json.dumps({'type': 'output', 'data': line})
-                    logger.debug(f'Sending SSE message: {message}')
-                    crew_output_queue.put(message)
-            
-            output = {
-                "research": "/api/output/research.md",
-                "blog_post": "/api/output/blog_post.md",
-                "linkedin_post": "/api/output/linkedin_post.md",
-                "twitter_post": "/api/output/twitter_post.md",
-            }
-            
-            complete_message = json.dumps({'type': 'complete', 'data': output})
-            logger.info(f'Sending complete message: {complete_message}')
-            crew_output_queue.put(complete_message)
-        except Exception as e:
-            logger.error(f'An error occurred: {str(e)}')
-            logger.error(traceback.format_exc())
-            error_message = json.dumps({'type': 'error', 'data': str(e)})
-            logger.error(f'Sending error message: {error_message}')
-            crew_output_queue.put(error_message)
-
-    threading.Thread(target=run_crew).start()
+    # Start content generation in a background thread
+    threading.Thread(target=generate_content_background, args=(inputs,)).start()
     
     return jsonify({"message": "Content generation started"}), 202
 
 @app.route('/api/stream')
 def stream():
-    logger.info('SSE connection established')
     def generate():
         while True:
             try:
-                message = crew_output_queue.get(timeout=30)  # 30 second timeout
-                logger.debug(f'Yielding SSE message: {message}')
+                message = message_queue.get(timeout=30)  # 30-second timeout
                 yield f"data: {message}\n\n"
             except queue.Empty:
-                logger.debug('Queue empty, sending keepalive')
                 yield f"data: {json.dumps({'type': 'keepalive'})}\n\n"
-
+    
     return Response(generate(), mimetype='text/event-stream')
 
 @app.route('/api/output/<path:filename>')
 def serve_file(filename):
-    logger.info(f'Received request for file: {filename}')
+    app.logger.info(f'Received request for file: {filename}')
     try:
-        # Ensure the filename doesn't contain any path traversal
         filename = os.path.basename(filename)
         file_path = os.path.join(OUTPUT_DIR, filename)
         
-        logger.info(f'Attempting to serve file: {file_path}')
+        app.logger.info(f'Attempting to serve file: {file_path}')
         
         if not os.path.exists(file_path):
-            logger.error(f'File not found: {file_path}')
+            app.logger.error(f'File not found: {file_path}')
             return jsonify({"error": "File not found"}), 404
         
-        return send_file(file_path, as_attachment=False)
+        with open(file_path, 'r') as file:
+            content = file.read()
+        
+        return Response(content, mimetype='text/markdown')
     except Exception as e:
-        logger.error(f'Error serving file: {str(e)}')
-        return jsonify({"error": "Error serving file"}), 500
+        app.logger.error(f'Error serving file: {str(e)}')
+        app.logger.error(traceback.format_exc())
+        return jsonify({"error": "Error serving file. Please try again later."}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

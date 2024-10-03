@@ -17,6 +17,7 @@ const MarketingAIInterface = () => {
   const [fileContents, setFileContents] = useState({});
   const [error, setError] = useState(null);
   const [verboseOutput, setVerboseOutput] = useState([]);
+  const [status, setStatus] = useState('');
   
   const { colorMode, toggleColorMode } = useColorMode();
   const eventSourceRef = useRef(null);
@@ -38,6 +39,7 @@ const MarketingAIInterface = () => {
     setError(null);
     setFileContents({});
     setVerboseOutput([]);
+    setStatus('Initializing...');
 
     try {
       console.log('Sending POST request to initiate content generation');
@@ -54,19 +56,19 @@ const MarketingAIInterface = () => {
 
       eventSourceRef.current = new EventSource(`${API_URL}/api/stream`);
 
-      eventSourceRef.current.onopen = () => {
-        console.log('SSE connection opened');
-      };
-
       eventSourceRef.current.onmessage = (event) => {
         console.log('Received SSE message:', event.data);
         const data = JSON.parse(event.data);
         switch (data.type) {
+          case 'status':
+            setStatus(data.data);
+            break;
           case 'output':
             setVerboseOutput(prev => [...prev, data.data]);
             break;
           case 'complete':
             setIsLoading(false);
+            setStatus('Generation complete!');
             fetchGeneratedContent(data.data);
             eventSourceRef.current.close();
             break;
@@ -103,8 +105,10 @@ const MarketingAIInterface = () => {
       console.log('Fetching generated content');
       const contents = {};
       for (const [key, filePath] of Object.entries(output)) {
-        const fileResponse = await axios.get(`${API_URL}${filePath}`);
-        contents[key] = fileResponse.data;
+        if (key !== 'verbose_output') {
+          const fileResponse = await axios.get(`${API_URL}${filePath}`);
+          contents[key] = fileResponse.data;
+        }
       }
       setFileContents(contents);
       console.log('Generated content fetched successfully');
@@ -174,7 +178,7 @@ const MarketingAIInterface = () => {
               <Box>
                 {isLoading && (
                   <Box mb={4}>
-                    <Text mb={2}>Generating content...</Text>
+                    <Text mb={2}>{status}</Text>
                     <Progress size="xs" isIndeterminate colorScheme="blue" />
                   </Box>
                 )}
