@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { ChakraProvider, Box, VStack, Heading, Text, Input, Textarea, Button, useColorMode, useColorModeValue, Progress, Alert, AlertIcon, SimpleGrid, Container, Fade } from "@chakra-ui/react";
 import { SunIcon, MoonIcon } from '@chakra-ui/icons';
 import axios from 'axios';
@@ -37,23 +37,61 @@ const MarketingAIInterface = () => {
     setError(null);
     setFileContents({});
     setVerboseOutput([]);
-    try {
-      const response = await axios.post(`${API_URL}/api/generate`, inputs);
-      setVerboseOutput(response.data.verbose_output);
 
-      const contents = {};
-      for (const [key, filePath] of Object.entries(response.data)) {
-        if (key !== 'verbose_output') {
-          const fileResponse = await axios.get(`${API_URL}${filePath}`);
-          contents[key] = fileResponse.data;
+    try {
+      const response = await axios.post(`${API_URL}/api/generate`, inputs, {
+        responseType: 'text',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream',
+        },
+      });
+
+      const reader = response.data.split('\n');
+      for (const line of reader) {
+        if (line.startsWith('data: ')) {
+          const data = JSON.parse(line.slice(6));
+          if (data.status === 'complete') {
+            setIsLoading(false);
+            const contents = {};
+            for (const [key, filePath] of Object.entries(data.output)) {
+              const fileResponse = await axios.get(`${API_URL}${filePath}`);
+              contents[key] = fileResponse.data;
+            }
+            setFileContents(contents);
+            break;
+          } else if (data.status === 'error') {
+            setIsLoading(false);
+            setError(data.message);
+            break;
+          }
         }
       }
-      setFileContents(contents);
     } catch (error) {
-      setError(error.response?.data?.error || 'An error occurred');
+      console.error('Error:', error);
+      setIsLoading(false);
+      setError('An error occurred while generating content');
     }
-    setIsLoading(false);
   };
+
+  useEffect(() => {
+    const logEventSource = new EventSource(`${API_URL}/api/logs`);
+
+    logEventSource.onmessage = (event) => {
+      if (event.data !== 'keep-alive') {
+        setVerboseOutput(prev => [...prev, event.data]);
+      }
+    };
+
+    logEventSource.onerror = (error) => {
+      console.error('Log EventSource failed:', error);
+      logEventSource.close();
+    };
+
+    return () => {
+      logEventSource.close();
+    };
+  }, []);
 
   const inputFields = useMemo(() => (
     Object.entries(inputs).map(([key, value]) => (

@@ -1,9 +1,12 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, Response
 from flask_cors import CORS
 from marketing_ai.crew import MarketingAiCrew
 import os
 import logging
 import traceback
+import queue
+import threading
+import json
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
@@ -13,6 +16,17 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Define the base directory for output files
 OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'output'))
+
+# Create a queue for storing log messages
+log_queue = queue.Queue()
+
+class QueueHandler(logging.Handler):
+    def emit(self, record):
+        log_entry = self.format(record)
+        log_queue.put(log_entry)
+
+# Add the custom handler to the root logger
+logging.getLogger().addHandler(QueueHandler())
 
 @app.route('/api/generate', methods=['POST'])
 def generate_content():
@@ -29,29 +43,42 @@ def generate_content():
     
     app.logger.info(f'Processed inputs: {inputs}')
     
-    try:
-        app.logger.info('Initializing MarketingAiCrew')
-        crew = MarketingAiCrew()
-        app.logger.info('MarketingAiCrew initialized successfully')
+    def generate():
+        try:
+            app.logger.info('Initializing MarketingAiCrew')
+            crew = MarketingAiCrew()
+            app.logger.info('MarketingAiCrew initialized successfully')
 
-        app.logger.info('Running crew')
-        result, captured_output = crew.run_crew(inputs)
-        app.logger.info('Crew run completed')
-        
-        output = {
-            "research": "/api/output/research.md",
-            "blog_post": "/api/output/blog_post.md",
-            "linkedin_post": "/api/output/linkedin_post.md",
-            "twitter_post": "/api/output/twitter_post.md",
-            "verbose_output": captured_output
-        }
-        
-        app.logger.info(f'Sending response: {output}')
-        return jsonify(output), 200
-    except Exception as e:
-        app.logger.error(f'An error occurred: {str(e)}')
-        app.logger.error(traceback.format_exc())
-        return jsonify({"error": str(e)}), 500
+            app.logger.info('Running crew')
+            result = crew.run_crew(inputs)
+            app.logger.info('Crew run completed')
+            
+            output = {
+                "research": "/api/output/research.md",
+                "blog_post": "/api/output/blog_post.md",
+                "linkedin_post": "/api/output/linkedin_post.md",
+                "twitter_post": "/api/output/twitter_post.md",
+            }
+            
+            yield f"data: {json.dumps({'status': 'complete', 'output': output})}\n\n"
+        except Exception as e:
+            app.logger.error(f'An error occurred: {str(e)}')
+            app.logger.error(traceback.format_exc())
+            yield f"data: {json.dumps({'status': 'error', 'message': str(e)})}\n\n"
+
+    return Response(generate(), mimetype='text/event-stream')
+
+@app.route('/api/logs')
+def stream_logs():
+    def generate():
+        while True:
+            try:
+                log_entry = log_queue.get(timeout=1)
+                yield f"data: {json.dumps(log_entry)}\n\n"
+            except queue.Empty:
+                yield f"data: keep-alive\n\n"
+
+    return Response(generate(), mimetype='text/event-stream')
 
 @app.route('/api/output/<path:filename>')
 def serve_file(filename):

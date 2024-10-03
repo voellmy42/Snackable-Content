@@ -1,1 +1,1 @@
-🌍 In Switzerland, child care stands out for its universal access, quality, and inclusivity. Unlike many countries, every child has affordable options, with trained educators dedicated to development. A thriving community fosters support for parents too! #ChildCare #Switzerland #ParentSupport
+🌍 In Switzerland, child care is a right, not a privilege, embracing every child's potential! However, quality comes at a cost. 🏫 Thankfully, state support cushions the expense, ensuring all families can thrive while nurturing their little ones. #SwissChildCare #ParentingSupport
