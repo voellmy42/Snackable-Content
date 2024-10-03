@@ -6,19 +6,29 @@ import FilePreview from './FilePreview';
 
 const API_URL = 'http://localhost:5001';
 
-const ChatMessage = ({ message, isAI }) => {
-  const bgColor = useColorModeValue(isAI ? "blue.100" : "green.100", isAI ? "blue.700" : "green.700");
+const AI_AVATAR = "/ai-avatar.png";
+
+const ChatMessage = ({ message, sender }) => {
+  const bgColor = useColorModeValue(
+    sender === 'System' ? "gray.100" : 
+    sender === 'Final Answer' ? "green.100" : "blue.100",
+    sender === 'System' ? "gray.700" : 
+    sender === 'Final Answer' ? "green.700" : "blue.700"
+  );
   const textColor = useColorModeValue("gray.800", "white");
-  const avatarBg = useColorModeValue(isAI ? "blue.500" : "green.500", isAI ? "blue.200" : "green.200");
 
   return (
-    <Box display="flex" justifyContent={isAI ? "flex-start" : "flex-end"} mb={4}>
-      <Box maxWidth="70%" display="flex" flexDirection={isAI ? "row" : "row-reverse"}>
-        <Avatar bg={avatarBg} mr={isAI ? 2 : 0} ml={isAI ? 0 : 2}>
-          {isAI ? "AI" : "You"}
-        </Avatar>
-        <Box bg={bgColor} p={3} borderRadius="lg" color={textColor}>
-          <Text>{message}</Text>
+    <Box display="flex" justifyContent="flex-start" mb={4} width="100%">
+      <Box maxWidth="100%" display="flex" flexDirection="row">
+        <Avatar 
+          src={AI_AVATAR}
+          mr={2}
+        />
+        <Box bg={bgColor} p={3} borderRadius="lg" color={textColor} width="100%">
+          {sender !== 'System' && (
+            <Text fontWeight="bold" mb={1}>{sender}</Text>
+          )}
+          <Text whiteSpace="pre-wrap" wordBreak="break-word">{message}</Text>
         </Box>
       </Box>
     </Box>
@@ -35,8 +45,8 @@ const MarketingAIInterface = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [fileContents, setFileContents] = useState({});
   const [error, setError] = useState(null);
-  const [verboseOutput, setVerboseOutput] = useState([]);
   const [status, setStatus] = useState('');
+  const [conversation, setConversation] = useState([]);
   
   const { colorMode, toggleColorMode } = useColorMode();
   const eventSourceRef = useRef(null);
@@ -53,12 +63,53 @@ const MarketingAIInterface = () => {
     setInputs(prevInputs => ({ ...prevInputs, [e.target.name]: e.target.value }));
   }, []);
 
+  const processOutput = (output) => {
+    const lines = output.split('\n');
+    let currentSpeaker = 'System';
+    let currentMessage = '';
+  
+    const cleanMessage = (msg) => {
+      return msg
+        .replace(/\[\d+m/g, '')  // Remove ANSI color codes
+        .replace(/\d+m/g, '')    // Remove remaining 'm' suffixed numbers
+        .replace(/[[\]#]/g, '')  // Remove brackets and hash symbols
+        .replace(/^\s*\d+\s*/, '')  // Remove leading numbers
+        .trim();
+    };
+  
+    lines.forEach(line => {
+      const cleanLine = cleanMessage(line);
+      if (line.includes('Agent:')) {
+        if (currentMessage) {
+          setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim() }]);
+          currentMessage = '';
+        }
+        currentSpeaker = cleanLine.replace('Agent:', '').trim();
+      } else if (line.includes('Task:')) {
+        setConversation(prev => [...prev, { sender: 'System', message: cleanLine.replace('Task:', '').trim() }]);
+      } else if (line.includes('Final Answer:')) {
+        if (currentMessage) {
+          setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim() }]);
+          currentMessage = '';
+        }
+        currentSpeaker = 'Final Answer';
+        currentMessage = cleanLine.replace('Final Answer:', '').trim();
+      } else if (cleanLine) {
+        currentMessage += cleanLine + ' ';
+      }
+    });
+  
+    if (currentMessage) {
+      setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim() }]);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
     setFileContents({});
-    setVerboseOutput([]);
+    setConversation([]);
     setStatus('Initializing...');
 
     try {
@@ -84,7 +135,7 @@ const MarketingAIInterface = () => {
             setStatus(data.data);
             break;
           case 'output':
-            setVerboseOutput(prev => [...prev, data.data]);
+            processOutput(data.data);
             break;
           case 'complete':
             setIsLoading(false);
@@ -151,7 +202,7 @@ const MarketingAIInterface = () => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-  }, [verboseOutput]);
+  }, [conversation]);
 
   const inputFields = useMemo(() => (
     Object.entries(inputs).map(([key, value]) => (
@@ -216,7 +267,7 @@ const MarketingAIInterface = () => {
                   </Alert>
                 )}
 
-                {verboseOutput.length > 0 && (
+                {conversation.length > 0 && (
                   <Box mb={4} bg={cardBgColor} p={4} borderRadius="lg" boxShadow="md" borderColor={inputBorderColor} borderWidth={1}>
                     <Heading as="h3" size="md" mb={2}>Agent Conversation</Heading>
                     <Box
@@ -228,9 +279,9 @@ const MarketingAIInterface = () => {
                       maxHeight="400px"
                       fontSize="sm"
                     >
-                      {verboseOutput.map((output, index) => (
+                      {conversation.map((msg, index) => (
                         <Fade in={true} key={index}>
-                          <ChatMessage message={output} isAI={true} />
+                          <ChatMessage message={msg.message} sender={msg.sender} />
                         </Fade>
                       ))}
                     </Box>
