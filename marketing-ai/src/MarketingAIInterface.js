@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { ChakraProvider, Box, VStack, Heading, Text, Input, Textarea, Button, useColorMode, useColorModeValue, Progress, Alert, AlertIcon, SimpleGrid, Container, Fade } from "@chakra-ui/react";
 import { SunIcon, MoonIcon } from '@chakra-ui/icons';
 import axios from 'axios';
@@ -19,6 +19,7 @@ const MarketingAIInterface = () => {
   const [verboseOutput, setVerboseOutput] = useState([]);
   
   const { colorMode, toggleColorMode } = useColorMode();
+  const eventSourceRef = useRef(null);
 
   const bgColor = useColorModeValue("white", "gray.800");
   const color = useColorModeValue("gray.800", "white");
@@ -39,57 +40,86 @@ const MarketingAIInterface = () => {
     setVerboseOutput([]);
 
     try {
-      const response = await axios.post(`${API_URL}/api/generate`, inputs, {
-        responseType: 'text',
+      console.log('Sending POST request to initiate content generation');
+      await axios.post(`${API_URL}/api/generate`, inputs, {
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'text/event-stream',
         },
       });
+      console.log('POST request successful, initiating SSE connection');
 
-      const reader = response.data.split('\n');
-      for (const line of reader) {
-        if (line.startsWith('data: ')) {
-          const data = JSON.parse(line.slice(6));
-          if (data.status === 'complete') {
-            setIsLoading(false);
-            const contents = {};
-            for (const [key, filePath] of Object.entries(data.output)) {
-              const fileResponse = await axios.get(`${API_URL}${filePath}`);
-              contents[key] = fileResponse.data;
-            }
-            setFileContents(contents);
-            break;
-          } else if (data.status === 'error') {
-            setIsLoading(false);
-            setError(data.message);
-            break;
-          }
-        }
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
       }
+
+      eventSourceRef.current = new EventSource(`${API_URL}/api/stream`);
+
+      eventSourceRef.current.onopen = () => {
+        console.log('SSE connection opened');
+      };
+
+      eventSourceRef.current.onmessage = (event) => {
+        console.log('Received SSE message:', event.data);
+        const data = JSON.parse(event.data);
+        switch (data.type) {
+          case 'output':
+            setVerboseOutput(prev => [...prev, data.data]);
+            break;
+          case 'complete':
+            setIsLoading(false);
+            fetchGeneratedContent(data.data);
+            eventSourceRef.current.close();
+            break;
+          case 'error':
+            setIsLoading(false);
+            setError(data.data);
+            eventSourceRef.current.close();
+            break;
+          case 'keepalive':
+            console.log('Received keepalive');
+            break;
+          default:
+            console.log('Unhandled message type:', data.type);
+            break;
+        }
+      };
+
+      eventSourceRef.current.onerror = (error) => {
+        console.error('EventSource failed:', error);
+        setIsLoading(false);
+        setError('An error occurred while receiving updates');
+        eventSourceRef.current.close();
+      };
+
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error initiating content generation:', error);
       setIsLoading(false);
-      setError('An error occurred while generating content');
+      setError('An error occurred while initiating content generation');
+    }
+  };
+
+  const fetchGeneratedContent = async (output) => {
+    try {
+      console.log('Fetching generated content');
+      const contents = {};
+      for (const [key, filePath] of Object.entries(output)) {
+        const fileResponse = await axios.get(`${API_URL}${filePath}`);
+        contents[key] = fileResponse.data;
+      }
+      setFileContents(contents);
+      console.log('Generated content fetched successfully');
+    } catch (error) {
+      console.error('Error fetching generated content:', error);
+      setError('An error occurred while fetching generated content');
     }
   };
 
   useEffect(() => {
-    const logEventSource = new EventSource(`${API_URL}/api/logs`);
-
-    logEventSource.onmessage = (event) => {
-      if (event.data !== 'keep-alive') {
-        setVerboseOutput(prev => [...prev, event.data]);
-      }
-    };
-
-    logEventSource.onerror = (error) => {
-      console.error('Log EventSource failed:', error);
-      logEventSource.close();
-    };
-
     return () => {
-      logEventSource.close();
+      if (eventSourceRef.current) {
+        console.log('Closing SSE connection');
+        eventSourceRef.current.close();
+      }
     };
   }, []);
 

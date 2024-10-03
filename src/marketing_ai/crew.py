@@ -3,18 +3,22 @@ from crewai.project import CrewBase, agent, crew, task
 import logging
 import io
 from contextlib import redirect_stdout
+import sys
 
 logger = logging.getLogger(__name__)
 
-class OutputCapture:
-    def __init__(self):
-        self.output = []
+class TeeIO(io.StringIO):
+    def __init__(self, original_stdout, *args, **kwargs):
+        self.original_stdout = original_stdout
+        super().__init__(*args, **kwargs)
 
-    def write(self, text):
-        self.output.append(text)
+    def write(self, s):
+        self.original_stdout.write(s)
+        return super().write(s)
 
     def flush(self):
-        pass
+        self.original_stdout.flush()
+        return super().flush()
 
 @CrewBase
 class MarketingAiCrew():
@@ -23,7 +27,7 @@ class MarketingAiCrew():
     def __init__(self):
         logger.info('Initializing MarketingAiCrew')
         super().__init__()
-        self.output_capture = OutputCapture()
+        self.output_capture = TeeIO(sys.stdout)
         logger.info('MarketingAiCrew initialized')
 
     @agent
@@ -114,6 +118,10 @@ class MarketingAiCrew():
 
     def run_crew(self, inputs):
         crew_instance = self.crew()
-        with redirect_stdout(self.output_capture):
+        original_stdout = sys.stdout
+        sys.stdout = self.output_capture
+        try:
             result = crew_instance.kickoff(inputs=inputs)
-        return result, self.output_capture.output
+        finally:
+            sys.stdout = original_stdout
+        return result, self.output_capture.getvalue()

@@ -13,26 +13,19 @@ CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Define the base directory for output files
 OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'output'))
 
-# Create a queue for storing log messages
-log_queue = queue.Queue()
-
-class QueueHandler(logging.Handler):
-    def emit(self, record):
-        log_entry = self.format(record)
-        log_queue.put(log_entry)
-
-# Add the custom handler to the root logger
-logging.getLogger().addHandler(QueueHandler())
+# Create a queue for storing crew output
+crew_output_queue = queue.Queue()
 
 @app.route('/api/generate', methods=['POST'])
 def generate_content():
-    app.logger.info('Received a request to /api/generate')
+    logger.info('Received a request to /api/generate')
     data = request.json
-    app.logger.info(f'Request data: {data}')
+    logger.info(f'Request data: {data}')
     
     inputs = {
         'topic': data.get('topic', ''),
@@ -41,17 +34,24 @@ def generate_content():
         'language': data.get('language', ''),
     }
     
-    app.logger.info(f'Processed inputs: {inputs}')
+    logger.info(f'Processed inputs: {inputs}')
     
-    def generate():
+    def run_crew():
         try:
-            app.logger.info('Initializing MarketingAiCrew')
+            logger.info('Initializing MarketingAiCrew')
             crew = MarketingAiCrew()
-            app.logger.info('MarketingAiCrew initialized successfully')
+            logger.info('MarketingAiCrew initialized successfully')
 
-            app.logger.info('Running crew')
-            result = crew.run_crew(inputs)
-            app.logger.info('Crew run completed')
+            logger.info('Running crew')
+            result, captured_output = crew.run_crew(inputs)
+            logger.info('Crew run completed')
+            
+            # Stream the captured output
+            for line in captured_output.split('\n'):
+                if line.strip():  # Only send non-empty lines
+                    message = json.dumps({'type': 'output', 'data': line})
+                    logger.debug(f'Sending SSE message: {message}')
+                    crew_output_queue.put(message)
             
             output = {
                 "research": "/api/output/research.md",
@@ -60,43 +60,52 @@ def generate_content():
                 "twitter_post": "/api/output/twitter_post.md",
             }
             
-            yield f"data: {json.dumps({'status': 'complete', 'output': output})}\n\n"
+            complete_message = json.dumps({'type': 'complete', 'data': output})
+            logger.info(f'Sending complete message: {complete_message}')
+            crew_output_queue.put(complete_message)
         except Exception as e:
-            app.logger.error(f'An error occurred: {str(e)}')
-            app.logger.error(traceback.format_exc())
-            yield f"data: {json.dumps({'status': 'error', 'message': str(e)})}\n\n"
+            logger.error(f'An error occurred: {str(e)}')
+            logger.error(traceback.format_exc())
+            error_message = json.dumps({'type': 'error', 'data': str(e)})
+            logger.error(f'Sending error message: {error_message}')
+            crew_output_queue.put(error_message)
 
-    return Response(generate(), mimetype='text/event-stream')
+    threading.Thread(target=run_crew).start()
+    
+    return jsonify({"message": "Content generation started"}), 202
 
-@app.route('/api/logs')
-def stream_logs():
+@app.route('/api/stream')
+def stream():
+    logger.info('SSE connection established')
     def generate():
         while True:
             try:
-                log_entry = log_queue.get(timeout=1)
-                yield f"data: {json.dumps(log_entry)}\n\n"
+                message = crew_output_queue.get(timeout=30)  # 30 second timeout
+                logger.debug(f'Yielding SSE message: {message}')
+                yield f"data: {message}\n\n"
             except queue.Empty:
-                yield f"data: keep-alive\n\n"
+                logger.debug('Queue empty, sending keepalive')
+                yield f"data: {json.dumps({'type': 'keepalive'})}\n\n"
 
     return Response(generate(), mimetype='text/event-stream')
 
 @app.route('/api/output/<path:filename>')
 def serve_file(filename):
-    app.logger.info(f'Received request for file: {filename}')
+    logger.info(f'Received request for file: {filename}')
     try:
         # Ensure the filename doesn't contain any path traversal
         filename = os.path.basename(filename)
         file_path = os.path.join(OUTPUT_DIR, filename)
         
-        app.logger.info(f'Attempting to serve file: {file_path}')
+        logger.info(f'Attempting to serve file: {file_path}')
         
         if not os.path.exists(file_path):
-            app.logger.error(f'File not found: {file_path}')
+            logger.error(f'File not found: {file_path}')
             return jsonify({"error": "File not found"}), 404
         
         return send_file(file_path, as_attachment=False)
     except Exception as e:
-        app.logger.error(f'Error serving file: {str(e)}')
+        logger.error(f'Error serving file: {str(e)}')
         return jsonify({"error": "Error serving file"}), 500
 
 if __name__ == '__main__':
