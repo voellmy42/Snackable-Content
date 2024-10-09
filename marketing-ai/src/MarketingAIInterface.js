@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { ChakraProvider, Box, VStack, Heading, Text, Input, Textarea, Button, useColorMode, useColorModeValue, Progress, Alert, AlertIcon, SimpleGrid, Container, Fade, Avatar } from "@chakra-ui/react";
+import { ChakraProvider, Box, VStack, Heading, Text, Input, Textarea, Button, Checkbox, useColorMode, useColorModeValue, Progress, Alert, AlertIcon, SimpleGrid, Container, Fade, Avatar } from "@chakra-ui/react";
 import { SunIcon, MoonIcon } from '@chakra-ui/icons';
 import axios from 'axios';
 import FilePreview from './FilePreview';
@@ -40,7 +40,8 @@ const MarketingAIInterface = () => {
     topic: '',
     description: '',
     targetAudience: '',
-    language: ''
+    language: '',
+    useOnlineResearch: false
   });
   const [isLoading, setIsLoading] = useState(false);
   const [fileContents, setFileContents] = useState({});
@@ -60,7 +61,8 @@ const MarketingAIInterface = () => {
   const verboseOutputBgColor = useColorModeValue("gray.50", "gray.600");
 
   const handleInputChange = useCallback((e) => {
-    setInputs(prevInputs => ({ ...prevInputs, [e.target.name]: e.target.value }));
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    setInputs(prevInputs => ({ ...prevInputs, [e.target.name]: value }));
   }, []);
 
   const processOutput = (output) => {
@@ -70,10 +72,10 @@ const MarketingAIInterface = () => {
   
     const cleanMessage = (msg) => {
       return msg
-        .replace(/\[\d+m/g, '')  // Remove ANSI color codes
-        .replace(/\d+m/g, '')    // Remove remaining 'm' suffixed numbers
-        .replace(/[[\]#]/g, '')  // Remove brackets and hash symbols
-        .replace(/^\s*\d+\s*/, '')  // Remove leading numbers
+        .replace(/\[\d+m/g, '')
+        .replace(/\d+m/g, '')
+        .replace(/[[\]#]/g, '')
+        .replace(/^\s*\d+\s*/, '')
         .trim();
     };
   
@@ -205,30 +207,47 @@ const MarketingAIInterface = () => {
   }, [conversation]);
 
   const inputFields = useMemo(() => (
-    Object.entries(inputs).map(([key, value]) => (
-      <Box key={key}>
-        <Text mb={2} fontWeight="bold">{formatLabel(key)}</Text>
-        {key === 'description' ? (
-          <Textarea
-            name={key}
-            value={value}
-            onChange={handleInputChange}
-            placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
-            bg={inputBgColor}
-            borderColor={inputBorderColor}
-          />
-        ) : (
-          <Input
-            name={key}
-            value={value}
-            onChange={handleInputChange}
-            placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
-            bg={inputBgColor}
-            borderColor={inputBorderColor}
-          />
-        )}
-      </Box>
-    ))
+    <>
+      {Object.entries(inputs).map(([key, value]) => {
+        if (key === 'useOnlineResearch') {
+          return (
+            <Box key={key}>
+              <Checkbox
+                name={key}
+                isChecked={value}
+                onChange={handleInputChange}
+              >
+                Use Online Research
+              </Checkbox>
+            </Box>
+          );
+        }
+        return (
+          <Box key={key}>
+            <Text mb={2} fontWeight="bold">{formatLabel(key)}</Text>
+            {key === 'description' ? (
+              <Textarea
+                name={key}
+                value={value}
+                onChange={handleInputChange}
+                placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
+                bg={inputBgColor}
+                borderColor={inputBorderColor}
+              />
+            ) : (
+              <Input
+                name={key}
+                value={value}
+                onChange={handleInputChange}
+                placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
+                bg={inputBgColor}
+                borderColor={inputBorderColor}
+              />
+            )}
+          </Box>
+        );
+      })}
+    </>
   ), [inputs, handleInputChange, inputBgColor, inputBorderColor]);
 
   return (
@@ -236,7 +255,7 @@ const MarketingAIInterface = () => {
       <Box minHeight="100vh" bg={bgColor} color={color} py={8}>
         <Container maxWidth="1400px">
           <VStack spacing={8} align="stretch">
-            <Heading as="h1" size="2xl" textAlign="center">Marketing AI</Heading>
+            <Heading as="h1" size="2xl" textAlign="center">Snackable Content</Heading>
             <Button onClick={toggleColorMode} alignSelf="flex-end" size="sm">
               {colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
             </Button>

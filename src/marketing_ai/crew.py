@@ -13,6 +13,9 @@ class PerplexityResearcher:
         self.base_url = "https://api.perplexity.ai/chat/completions"
 
     def research(self, query):
+        if not self.api_key:
+            return "Online research is disabled. Using existing knowledge only."
+        
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
@@ -32,7 +35,7 @@ class PerplexityResearcher:
 class MarketingAiCrew():
     """MarketingAi crew"""
 
-    def __init__(self, perplexity_api_key):
+    def __init__(self, perplexity_api_key=None):
         logger.info('Initializing MarketingAiCrew')
         super().__init__()
         self.perplexity_researcher = PerplexityResearcher(perplexity_api_key)

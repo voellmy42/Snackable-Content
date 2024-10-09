@@ -40,7 +40,8 @@ class OutputCapture(io.StringIO):
 def generate_content_background(inputs):
     try:
         message_queue.put(json.dumps({"type": "status", "data": "Initializing AI Crew..."}))
-        crew = MarketingAiCrew(perplexity_api_key=PERPLEXITY_API_KEY)
+        use_online_research = inputs.get('useOnlineResearch', False)
+        crew = MarketingAiCrew(perplexity_api_key=PERPLEXITY_API_KEY if use_online_research else None)
         message_queue.put(json.dumps({"type": "status", "data": "AI Crew initialized. Starting research..."}))
 
         # Redirect stdout to our custom OutputCapture
@@ -80,6 +81,7 @@ def generate_content():
         'description': data.get('description', ''),
         'target_audience': data.get('targetAudience', ''),
         'language': data.get('language', ''),
+        'useOnlineResearch': data.get('useOnlineResearch', False)
     }
     
     app.logger.info(f'Processed inputs: {inputs}')

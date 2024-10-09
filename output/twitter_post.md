@@ -1,1 +1,1 @@
-🚨 Hurricane Milton is racing towards Florida! With winds at 160 mph, it's time to act NOW. If under evacuation orders, leave immediately! Secure your home, gather essentials, and stay informed. Your safety is crucial! #HurricaneMilton #FloridaStrong 🌪️🏠
+🎶 The 2024 US Presidential Election is heating up! Currently, President Biden is leading the charge for the Dems, while Trump remains a strong contender for the GOP. As primaries heat up, keep your ears tuned to this evolving symphony of democracy! 🗳️ #Election2024 #Vote 🎤
