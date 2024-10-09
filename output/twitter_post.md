@@ -1,1 +1,0 @@
-🇺🇸 The U.S. political system is a complex dance between two major parties, shaping everything from policy to identity. While partisanship creates zest, it often sidelines essential issues. Are we ready to refocus on solutions instead of rivalries? Let’s engage! #Politics #TwoPartySystem
