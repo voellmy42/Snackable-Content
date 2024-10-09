@@ -1,0 +1,1 @@
+🚨 Hurricane Milton is racing towards Florida! With winds at 160 mph, it's time to act NOW. If under evacuation orders, leave immediately! Secure your home, gather essentials, and stay informed. Your safety is crucial! #HurricaneMilton #FloridaStrong 🌪️🏠

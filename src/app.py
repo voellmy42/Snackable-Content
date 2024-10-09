@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, send_file, Response
 from flask_cors import CORS
 from flask_caching import Cache
-from marketing_ai.crew import MarketingAiCrew
+from marketing_ai.crew import MarketingAiCrew, PerplexityResearcher
 import os
 import logging
 import traceback
@@ -10,6 +10,10 @@ import queue
 import threading
 import sys
 import io
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
@@ -24,6 +28,9 @@ OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'outp
 # Global queue for storing messages
 message_queue = queue.Queue()
 
+# Load Perplexity API key from environment variable
+PERPLEXITY_API_KEY = os.getenv('PERPLEXITY_API_KEY')
+
 class OutputCapture(io.StringIO):
     def write(self, s):
         super().write(s)
@@ -33,7 +40,7 @@ class OutputCapture(io.StringIO):
 def generate_content_background(inputs):
     try:
         message_queue.put(json.dumps({"type": "status", "data": "Initializing AI Crew..."}))
-        crew = MarketingAiCrew()
+        crew = MarketingAiCrew(perplexity_api_key=PERPLEXITY_API_KEY)
         message_queue.put(json.dumps({"type": "status", "data": "AI Crew initialized. Starting research..."}))
 
         # Redirect stdout to our custom OutputCapture
@@ -115,6 +122,31 @@ def serve_file(filename):
         app.logger.error(f'Error serving file: {str(e)}')
         app.logger.error(traceback.format_exc())
         return jsonify({"error": "Error serving file. Please try again later."}), 500
+
+@app.route('/api/test_perplexity', methods=['GET'])
+def test_perplexity():
+    try:
+        query = request.args.get('query', 'What is artificial intelligence?')
+        researcher = PerplexityResearcher(PERPLEXITY_API_KEY)
+        result = researcher.research(query)
+        return jsonify({"result": result})
+    except Exception as e:
+        app.logger.error(f'An error occurred: {str(e)}')
+        app.logger.error(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/test_researcher', methods=['GET'])
+def test_researcher():
+    try:
+        query = request.args.get('query', 'What is artificial intelligence?')
+        crew = MarketingAiCrew(perplexity_api_key=PERPLEXITY_API_KEY)
+        researcher = crew.researcher()
+        result = researcher.run(query)
+        return jsonify({"result": result})
+    except Exception as e:
+        app.logger.error(f'An error occurred: {str(e)}')
+        app.logger.error(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

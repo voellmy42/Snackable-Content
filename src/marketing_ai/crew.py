@@ -1,25 +1,55 @@
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
+from langchain.tools import Tool
 import logging
 import sys
+import requests
 
 logger = logging.getLogger(__name__)
+
+class PerplexityResearcher:
+    def __init__(self, api_key):
+        self.api_key = api_key
+        self.base_url = "https://api.perplexity.ai/chat/completions"
+
+    def research(self, query):
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "model": "llama-3.1-sonar-small-128k-online",
+            "messages": [{"role": "user", "content": query}]
+        }
+        response = requests.post(self.base_url, json=data, headers=headers)
+        if response.status_code == 200:
+            return response.json()['choices'][0]['message']['content']
+        else:
+            logger.error(f"Error in Perplexity API call: {response.text}")
+            return None
 
 @CrewBase
 class MarketingAiCrew():
     """MarketingAi crew"""
 
-    def __init__(self):
+    def __init__(self, perplexity_api_key):
         logger.info('Initializing MarketingAiCrew')
         super().__init__()
+        self.perplexity_researcher = PerplexityResearcher(perplexity_api_key)
         logger.info('MarketingAiCrew initialized')
 
     @agent
     def researcher(self) -> Agent:
         logger.info('Creating researcher agent')
+        perplexity_tool = Tool(
+            name="PerplexityResearch",
+            func=self.perplexity_researcher.research,
+            description="Useful for when you need to research a topic on the internet. Input should be a search query."
+        )
         agent = Agent(
             config=self.agents_config['researcher'],
             llm="gpt-4o-mini",
+            tools=[perplexity_tool],
             verbose=True
         )
         logger.info(f'Researcher agent created with goal: {agent.goal}')
