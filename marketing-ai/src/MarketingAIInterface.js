@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { ChakraProvider, Box, VStack, Heading, Text, Input, Textarea, Button, Checkbox, useColorMode, useColorModeValue, Progress, Alert, AlertIcon, SimpleGrid, Container, Fade, Avatar } from "@chakra-ui/react";
+import { ChakraProvider, Box, VStack, Heading, Text, Input, Textarea, Button, Checkbox, useColorMode, useColorModeValue, Progress, Alert, AlertIcon, SimpleGrid, Container, Fade, Avatar, Step, StepDescription, StepIcon, StepIndicator, StepNumber, StepSeparator, StepStatus, StepTitle, Stepper, Card, CardBody } from "@chakra-ui/react";
 import { SunIcon, MoonIcon } from '@chakra-ui/icons';
 import axios from 'axios';
 import FilePreview from './FilePreview';
@@ -43,6 +43,7 @@ const MarketingAIInterface = () => {
     language: '',
     useOnlineResearch: false
   });
+  const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [fileContents, setFileContents] = useState({});
   const [error, setError] = useState(null);
@@ -53,7 +54,7 @@ const MarketingAIInterface = () => {
   const eventSourceRef = useRef(null);
   const chatContainerRef = useRef(null);
 
-  const bgColor = useColorModeValue("white", "gray.800");
+  const bgColor = useColorModeValue("gray.50", "gray.900");
   const color = useColorModeValue("gray.800", "white");
   const cardBgColor = useColorModeValue("white", "gray.700");
   const inputBgColor = useColorModeValue("white", "gray.700");
@@ -206,49 +207,78 @@ const MarketingAIInterface = () => {
     }
   }, [conversation]);
 
+  const steps = [
+    { title: 'Topic', description: 'For what topic do you need snackable content?' },
+    { title: 'Direction', description: 'What are your thoughts about this topic?' },
+    { title: 'Audience', description: 'Which audience do you want to address with this content?' },
+    { title: 'Language', description: 'In what language should I write the content?' },
+    { title: 'Research', description: 'Choose if you want to use online research (with Perplexity) for up to date knowledge' },
+  ];
+
+  const handleNext = () => {
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
   const inputFields = useMemo(() => (
-    <>
-      {Object.entries(inputs).map(([key, value]) => {
-        if (key === 'useOnlineResearch') {
-          return (
-            <Box key={key}>
-              <Checkbox
-                name={key}
-                isChecked={value}
-                onChange={handleInputChange}
-              >
-                Use Online Research
-              </Checkbox>
+    <Card bg={cardBgColor} boxShadow="md" borderRadius="lg">
+      <CardBody>
+        <VStack spacing={4} align="stretch">
+          {Object.entries(inputs).map(([key, value], index) => (
+            <Box key={key} display={index === currentStep ? 'block' : 'none'}>
+              <Text mb={2} fontWeight="bold">{formatLabel(key)}</Text>
+              {key === 'description' ? (
+                <Textarea
+                  name={key}
+                  value={value}
+                  onChange={handleInputChange}
+                  placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
+                  bg={inputBgColor}
+                  borderColor={inputBorderColor}
+                />
+              ) : key === 'useOnlineResearch' ? (
+                <Checkbox
+                  name={key}
+                  isChecked={value}
+                  onChange={handleInputChange}
+                >
+                  Use Online Research
+                </Checkbox>
+              ) : (
+                <Input
+                  name={key}
+                  value={value}
+                  onChange={handleInputChange}
+                  placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
+                  bg={inputBgColor}
+                  borderColor={inputBorderColor}
+                />
+              )}
             </Box>
-          );
-        }
-        return (
-          <Box key={key}>
-            <Text mb={2} fontWeight="bold">{formatLabel(key)}</Text>
-            {key === 'description' ? (
-              <Textarea
-                name={key}
-                value={value}
-                onChange={handleInputChange}
-                placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
-                bg={inputBgColor}
-                borderColor={inputBorderColor}
-              />
+          ))}
+          <Box>
+            <Button onClick={handleBack} disabled={currentStep === 0} mr={2}>
+              Back
+            </Button>
+            {currentStep === steps.length - 1 ? (
+              <Button onClick={handleSubmit} colorScheme="blue" isLoading={isLoading} loadingText="Generating...">
+                Generate
+              </Button>
             ) : (
-              <Input
-                name={key}
-                value={value}
-                onChange={handleInputChange}
-                placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
-                bg={inputBgColor}
-                borderColor={inputBorderColor}
-              />
+              <Button onClick={handleNext}>Next</Button>
             )}
           </Box>
-        );
-      })}
-    </>
-  ), [inputs, handleInputChange, inputBgColor, inputBorderColor]);
+        </VStack>
+      </CardBody>
+    </Card>
+  ), [inputs, currentStep, handleInputChange, inputBgColor, inputBorderColor, isLoading, handleSubmit]);
 
   return (
     <ChakraProvider>
@@ -260,16 +290,27 @@ const MarketingAIInterface = () => {
               {colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
             </Button>
             <SimpleGrid columns={[1, null, 2]} spacing={8}>
-              <Box bg={cardBgColor} p={6} borderRadius="lg" boxShadow="md" borderColor={inputBorderColor} borderWidth={1}>
-                <form onSubmit={handleSubmit}>
-                  <VStack spacing={4} align="stretch">
-                    {inputFields}
-                    <Button type="submit" colorScheme="blue" isLoading={isLoading} loadingText="Generating...">
-                      Generate
-                    </Button>
-                  </VStack>
-                </form>
-              </Box>
+              <VStack spacing={8} align="stretch">
+                <Stepper index={currentStep} orientation="vertical">
+                  {steps.map((step, index) => (
+                    <Step key={index}>
+                      <StepIndicator>
+                        <StepStatus
+                          complete={<StepIcon />}
+                          incomplete={<StepNumber />}
+                          active={<StepNumber />}
+                        />
+                      </StepIndicator>
+                      <Box flexShrink="0">
+                        <StepTitle>{step.title}</StepTitle>
+                        <StepDescription>{step.description}</StepDescription>
+                      </Box>
+                      <StepSeparator />
+                    </Step>
+                  ))}
+                </Stepper>
+                {inputFields}
+              </VStack>
               
               <Box>
                 {isLoading && (
