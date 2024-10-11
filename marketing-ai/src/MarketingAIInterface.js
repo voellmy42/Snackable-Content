@@ -230,9 +230,15 @@ const MarketingAIInterface = () => {
   }, []);
 
   useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
+    const scrollToBottom = () => {
+      if (chatContainerRef.current) {
+        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      }
+    };
+  
+    scrollToBottom();
+    // Use a setTimeout to ensure scrolling happens after the DOM has updated
+    setTimeout(scrollToBottom, 0);
   }, [conversation]);
 
   useEffect(() => {
@@ -383,8 +389,7 @@ const MarketingAIInterface = () => {
                         <Text>{error}</Text>
                       </Alert>
                     )}
-  
-                    <Box flex={1} overflowY="auto" ref={chatContainerRef}>
+                    <Box height="400px" overflowY="auto" ref={chatContainerRef}>
                       <Heading as="h3" size="xs" mb={2}>Agent Conversation</Heading>
                       <VStack spacing={2} align="stretch">
                         {conversation.map((msg, index) => (
