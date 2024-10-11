@@ -62,9 +62,9 @@ const MarketingAIInterface = () => {
   const [status, setStatus] = useState('');
   const [conversation, setConversation] = useState([
     { sender: 'System', message: "Welcome to Snackable Content! Here's a preview of how our AI agents will collaborate to create your content." },
-    { sender: 'Researcher', message: "Hello! I'm the research specialist. I'll gather relevant information on your topic." },
-    { sender: 'Writer', message: "Greetings! I'm the content writer. I'll craft engaging blog posts based on our research." },
-    { sender: 'Social Media Manager', message: "Hi there! I'm the social media expert. I'll create catchy posts for various platforms." },
+    { sender: 'Researcher', message: "Hello! I'm Richard the research specialist. I am responsible to research your topic through offline or online research." },
+    { sender: 'Writer', message: "Hi! My name is Will and i am your personal ghostwriter. I am responsible to create engaging blog post posts that resonate with your target audience. I am also a language talent, so feel free to request any language" },
+    { sender: 'Social Media Manager', message: "Howdy! I am Rudy and I love creating social media content. My task is to transform the research into high quality snackable content that you can use on social media." },
     { sender: 'System', message: "Once you fill in the details and hit 'Generate', you'll see us in action here!" },
   ]);
   
