@@ -6,6 +6,7 @@ import FilePreview from './FilePreview';
 
 const API_URL = 'http://localhost:5001';
 
+const SYSTEM_AVATAR = "mario-kondo-avatar.png";
 const AI_AVATAR = "/ai-avatar.png";
 const RESEARCHER_AVATAR = "/researcher-avatar.png";
 const WRITER_AVATAR = "/writer-avatar.png";
@@ -28,19 +29,16 @@ const ChatMessage = ({ message, sender }) => {
   const avatarSrc = sender === 'Researcher' ? RESEARCHER_AVATAR :
                     sender === 'Writer' ? WRITER_AVATAR :
                     sender === 'Social Media Manager' ? SOCIAL_MEDIA_AVATAR :
+                    sender === 'System' ? SYSTEM_AVATAR :
                     AI_AVATAR;
 
   return (
-    <Box display="flex" justifyContent={sender === 'System' ? "center" : "flex-start"} mb={3} width="100%">
-      <Box maxWidth={sender === 'System' ? "100%" : "80%"} display="flex" flexDirection="row">
-        {sender !== 'System' && (
-          <Avatar src={avatarSrc} mr={2} size="sm" />
-        )}
+    <Box display="flex" justifyContent="flex-start" mb={3} width="100%">
+      <Box maxWidth="80%" display="flex" flexDirection="row">
+        <Avatar src={avatarSrc} mr={2} size="sm" />
         <Box bg={bgColor} p={2} borderRadius="lg" color={textColor} width="100%">
-          {sender !== 'System' && (
-            <Text fontWeight="bold" mb={1} fontSize="sm">{sender}</Text>
-          )}
-          <Text whiteSpace="pre-wrap" wordBreak="break-word" fontSize="sm">{message}</Text>
+          <Text fontWeight="bold" mb={1} fontSize="xs">{sender === 'System' ? 'Mario Kondo' : sender}</Text>
+          <Text whiteSpace="pre-wrap" wordBreak="break-word" fontSize="xs">{message}</Text>
         </Box>
       </Box>
     </Box>
