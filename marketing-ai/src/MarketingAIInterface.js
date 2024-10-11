@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { ChakraProvider, Box, VStack, Heading, Text, Input, Textarea, Button, Checkbox, useColorMode, useColorModeValue, Progress, Alert, AlertIcon, SimpleGrid, Container, Fade, Avatar, Step, StepDescription, StepIcon, StepIndicator, StepNumber, StepSeparator, StepStatus, StepTitle, Stepper, Card, CardBody } from "@chakra-ui/react";
+import { ChakraProvider, Box, VStack, HStack, Heading, Text, Input, Textarea, Button, Checkbox, useColorMode, useColorModeValue, Progress, Alert, AlertIcon, SimpleGrid, Container, Avatar, Step, StepDescription, StepIcon, StepIndicator, StepNumber, StepSeparator, StepStatus, StepTitle, Stepper, Card, CardBody } from "@chakra-ui/react";
 import { SunIcon, MoonIcon } from '@chakra-ui/icons';
 import axios from 'axios';
 import FilePreview from './FilePreview';
@@ -7,28 +7,40 @@ import FilePreview from './FilePreview';
 const API_URL = 'http://localhost:5001';
 
 const AI_AVATAR = "/ai-avatar.png";
+const RESEARCHER_AVATAR = "/researcher-avatar.png";
+const WRITER_AVATAR = "/writer-avatar.png";
+const SOCIAL_MEDIA_AVATAR = "/social-media-avatar.png";
 
 const ChatMessage = ({ message, sender }) => {
   const bgColor = useColorModeValue(
-    sender === 'System' ? "gray.100" : 
-    sender === 'Final Answer' ? "green.100" : "blue.100",
-    sender === 'System' ? "gray.700" : 
-    sender === 'Final Answer' ? "green.700" : "blue.700"
+    sender === 'System' ? "blue.100" : 
+    sender === 'Researcher' ? "green.100" :
+    sender === 'Writer' ? "purple.100" :
+    sender === 'Social Media Manager' ? "orange.100" :
+    sender === 'Final Answer' ? "pink.100" : "gray.100",
+    sender === 'System' ? "blue.700" : 
+    sender === 'Researcher' ? "green.700" :
+    sender === 'Writer' ? "purple.700" :
+    sender === 'Social Media Manager' ? "orange.700" :
+    sender === 'Final Answer' ? "pink.700" : "gray.700"
   );
   const textColor = useColorModeValue("gray.800", "white");
+  const avatarSrc = sender === 'Researcher' ? RESEARCHER_AVATAR :
+                    sender === 'Writer' ? WRITER_AVATAR :
+                    sender === 'Social Media Manager' ? SOCIAL_MEDIA_AVATAR :
+                    AI_AVATAR;
 
   return (
-    <Box display="flex" justifyContent="flex-start" mb={4} width="100%">
-      <Box maxWidth="100%" display="flex" flexDirection="row">
-        <Avatar 
-          src={AI_AVATAR}
-          mr={2}
-        />
-        <Box bg={bgColor} p={3} borderRadius="lg" color={textColor} width="100%">
+    <Box display="flex" justifyContent={sender === 'System' ? "center" : "flex-start"} mb={3} width="100%">
+      <Box maxWidth={sender === 'System' ? "100%" : "80%"} display="flex" flexDirection="row">
+        {sender !== 'System' && (
+          <Avatar src={avatarSrc} mr={2} size="sm" />
+        )}
+        <Box bg={bgColor} p={2} borderRadius="lg" color={textColor} width="100%">
           {sender !== 'System' && (
-            <Text fontWeight="bold" mb={1}>{sender}</Text>
+            <Text fontWeight="bold" mb={1} fontSize="sm">{sender}</Text>
           )}
-          <Text whiteSpace="pre-wrap" wordBreak="break-word">{message}</Text>
+          <Text whiteSpace="pre-wrap" wordBreak="break-word" fontSize="sm">{message}</Text>
         </Box>
       </Box>
     </Box>
@@ -48,18 +60,28 @@ const MarketingAIInterface = () => {
   const [fileContents, setFileContents] = useState({});
   const [error, setError] = useState(null);
   const [status, setStatus] = useState('');
-  const [conversation, setConversation] = useState([]);
+  const [conversation, setConversation] = useState([
+    { sender: 'System', message: "Welcome to Snackable Content! Here's a preview of how our AI agents will collaborate to create your content." },
+    { sender: 'Researcher', message: "Hello! I'm the research specialist. I'll gather relevant information on your topic." },
+    { sender: 'Writer', message: "Greetings! I'm the content writer. I'll craft engaging blog posts based on our research." },
+    { sender: 'Social Media Manager', message: "Hi there! I'm the social media expert. I'll create catchy posts for various platforms." },
+    { sender: 'System', message: "Once you fill in the details and hit 'Generate', you'll see us in action here!" },
+  ]);
   
   const { colorMode, toggleColorMode } = useColorMode();
-  const eventSourceRef = useRef(null);
   const chatContainerRef = useRef(null);
+  const eventSourceRef = useRef(null);
+  const inputRef = useRef(null);
 
   const bgColor = useColorModeValue("gray.50", "gray.900");
   const color = useColorModeValue("gray.800", "white");
   const cardBgColor = useColorModeValue("white", "gray.700");
   const inputBgColor = useColorModeValue("white", "gray.700");
   const inputBorderColor = useColorModeValue("gray.300", "gray.600");
-  const verboseOutputBgColor = useColorModeValue("gray.50", "gray.600");
+
+  const setInputRef = useCallback(element => {
+    inputRef.current = element;
+  }, []);
 
   const handleInputChange = useCallback((e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -79,6 +101,11 @@ const MarketingAIInterface = () => {
         .replace(/^\s*\d+\s*/, '')
         .trim();
     };
+  
+    setConversation(prev => [
+      ...prev,
+      { sender: 'System', message: "The agents are now working on your content. Here's their conversation:" }
+    ]);
   
     lines.forEach(line => {
       const cleanLine = cleanMessage(line);
@@ -105,6 +132,8 @@ const MarketingAIInterface = () => {
     if (currentMessage) {
       setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim() }]);
     }
+
+    setConversation(prev => [...prev, { sender: 'System', message: "The agents have completed their work on your content." }]);
   };
 
   const handleSubmit = async (e) => {
@@ -112,7 +141,6 @@ const MarketingAIInterface = () => {
     setIsLoading(true);
     setError(null);
     setFileContents({});
-    setConversation([]);
     setStatus('Initializing...');
 
     try {
@@ -207,91 +235,59 @@ const MarketingAIInterface = () => {
     }
   }, [conversation]);
 
-  const steps = [
-    { title: 'Topic', description: 'For what topic do you need snackable content?' },
-    { title: 'Direction', description: 'What are your thoughts about this topic?' },
-    { title: 'Audience', description: 'Which audience do you want to address with this content?' },
-    { title: 'Language', description: 'In what language should I write the content?' },
-    { title: 'Research', description: 'Choose if you want to use online research (with Perplexity) for up to date knowledge' },
-  ];
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [currentStep]);
 
-  const handleNext = () => {
+  const steps = useMemo(() => [
+    { title: 'Topic', description: 'Enter the main topic' },
+    { title: 'Description', description: 'Provide more details' },
+    { title: 'Audience', description: 'Define target audience' },
+    { title: 'Language', description: 'Specify the language' },
+    { title: 'Research', description: 'Choose research option' },
+  ], []);
+
+  const handleNext = useCallback(() => {
     if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
+      setCurrentStep(prevStep => prevStep + 1);
     }
-  };
+  }, [currentStep, steps.length]);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+      setCurrentStep(prevStep => prevStep - 1);
+    }
+  }, [currentStep]);
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (currentStep === steps.length - 1) {
+        handleSubmit(e);
+      } else {
+        handleNext();
+      }
     }
   };
 
-  const inputFields = useMemo(() => (
-    <Card bg={cardBgColor} boxShadow="md" borderRadius="lg">
-      <CardBody>
-        <VStack spacing={4} align="stretch">
-          {Object.entries(inputs).map(([key, value], index) => (
-            <Box key={key} display={index === currentStep ? 'block' : 'none'}>
-              <Text mb={2} fontWeight="bold">{formatLabel(key)}</Text>
-              {key === 'description' ? (
-                <Textarea
-                  name={key}
-                  value={value}
-                  onChange={handleInputChange}
-                  placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
-                  bg={inputBgColor}
-                  borderColor={inputBorderColor}
-                />
-              ) : key === 'useOnlineResearch' ? (
-                <Checkbox
-                  name={key}
-                  isChecked={value}
-                  onChange={handleInputChange}
-                >
-                  Use Online Research
-                </Checkbox>
-              ) : (
-                <Input
-                  name={key}
-                  value={value}
-                  onChange={handleInputChange}
-                  placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
-                  bg={inputBgColor}
-                  borderColor={inputBorderColor}
-                />
-              )}
-            </Box>
-          ))}
-          <Box>
-            <Button onClick={handleBack} disabled={currentStep === 0} mr={2}>
-              Back
-            </Button>
-            {currentStep === steps.length - 1 ? (
-              <Button onClick={handleSubmit} colorScheme="blue" isLoading={isLoading} loadingText="Generating...">
-                Generate
-              </Button>
-            ) : (
-              <Button onClick={handleNext}>Next</Button>
-            )}
-          </Box>
-        </VStack>
-      </CardBody>
-    </Card>
-  ), [inputs, currentStep, handleInputChange, inputBgColor, inputBorderColor, isLoading, handleSubmit]);
+  const formatLabel = useCallback((key) => {
+    return key.split(/(?=[A-Z])/).join(' ').replace(/^\w/, c => c.toUpperCase());
+  }, []);
 
   return (
     <ChakraProvider>
-      <Box minHeight="100vh" bg={bgColor} color={color} py={8}>
+      <Box minHeight="100vh" bg={bgColor} color={color} py={4}>
         <Container maxWidth="1400px">
-          <VStack spacing={8} align="stretch">
-            <Heading as="h1" size="2xl" textAlign="center">Snackable Content</Heading>
+          <VStack spacing={4} align="stretch">
+            <Heading as="h1" size="xl" textAlign="center">Snackable Content</Heading>
             <Button onClick={toggleColorMode} alignSelf="flex-end" size="sm">
               {colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
             </Button>
-            <SimpleGrid columns={[1, null, 2]} spacing={8}>
-              <VStack spacing={8} align="stretch">
-                <Stepper index={currentStep} orientation="vertical">
+            <SimpleGrid columns={[1, null, 2]} spacing={4}>
+              <VStack spacing={4} align="stretch" height="100%">
+                <Stepper index={currentStep} orientation="vertical" gap={2}>
                   {steps.map((step, index) => (
                     <Step key={index}>
                       <StepIndicator>
@@ -302,58 +298,109 @@ const MarketingAIInterface = () => {
                         />
                       </StepIndicator>
                       <Box flexShrink="0">
-                        <StepTitle>{step.title}</StepTitle>
-                        <StepDescription>{step.description}</StepDescription>
+                        <StepTitle fontSize="sm">{step.title}</StepTitle>
+                        <StepDescription fontSize="xs">{step.description}</StepDescription>
                       </Box>
                       <StepSeparator />
                     </Step>
                   ))}
                 </Stepper>
-                {inputFields}
+                <Card bg={cardBgColor} boxShadow="md" borderRadius="lg" flex={1}>
+                  <CardBody py={3} display="flex" flexDirection="column" height="100%">
+                    <VStack spacing={3} align="stretch" flex={1}>
+                      <Text fontWeight="bold" fontSize="sm">{formatLabel(Object.keys(inputs)[currentStep])}</Text>
+                      {Object.entries(inputs).map(([key, value], index) => (
+                        <Box key={key} display={index === currentStep ? 'block' : 'none'} flex={1}>
+                          {key === 'description' ? (
+                            <Textarea
+                              ref={setInputRef}
+                              name={key}
+                              value={value}
+                              onChange={handleInputChange}
+                              onKeyDown={handleKeyDown}
+                              placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
+                              bg={inputBgColor}
+                              borderColor={inputBorderColor}
+                              size="sm"
+                              rows={2}
+                              height="100%"
+                            />
+                          ) : key === 'useOnlineResearch' ? (
+                            <Checkbox
+                              ref={setInputRef}
+                              name={key}
+                              isChecked={value}
+                              onChange={handleInputChange}
+                              size="sm"
+                            >
+                              Use Online Research
+                            </Checkbox>
+                          ) : (
+                            <Input
+                              ref={setInputRef}
+                              name={key}
+                              value={value}
+                              onChange={handleInputChange}
+                              onKeyDown={handleKeyDown}
+                              placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
+                              bg={inputBgColor}
+                              borderColor={inputBorderColor}
+                              size="sm"
+                            />
+                          )}
+                        </Box>
+                      ))}
+                      <HStack justify="flex-start" mt="auto" spacing={2}>
+                        <Button onClick={handleBack} disabled={currentStep === 0} size="sm">
+                          Back
+                        </Button>
+                        {currentStep === steps.length - 1 ? (
+                          <Button onClick={handleSubmit} colorScheme="blue" isLoading={isLoading} loadingText="Generating..." size="sm">
+                            Generate
+                          </Button>
+                        ) : (
+                          <Button onClick={handleNext} size="sm">Next</Button>
+                        )}
+                      </HStack>
+                    </VStack>
+                  </CardBody>
+                </Card>
               </VStack>
               
-              <Box>
-                {isLoading && (
-                  <Box mb={4}>
-                    <Text mb={2}>{status}</Text>
-                    <Progress size="xs" isIndeterminate colorScheme="blue" />
-                  </Box>
-                )}
-
-                {error && (
-                  <Alert status="error" mb={4}>
-                    <AlertIcon />
-                    {error}
-                  </Alert>
-                )}
-
-                {conversation.length > 0 && (
-                  <Box mb={4} bg={cardBgColor} p={4} borderRadius="lg" boxShadow="md" borderColor={inputBorderColor} borderWidth={1}>
-                    <Heading as="h3" size="md" mb={2}>Agent Conversation</Heading>
-                    <Box
-                      ref={chatContainerRef}
-                      bg={verboseOutputBgColor}
-                      p={4}
-                      borderRadius="md"
-                      overflow="auto"
-                      maxHeight="400px"
-                      fontSize="sm"
-                    >
-                      {conversation.map((msg, index) => (
-                        <Fade in={true} key={index}>
-                          <ChatMessage message={msg.message} sender={msg.sender} />
-                        </Fade>
-                      ))}
+              <Card bg={cardBgColor} boxShadow="md" borderRadius="lg" height="100%">
+                <CardBody p={3} display="flex" flexDirection="column" height="100%">
+                  <VStack spacing={2} align="stretch" height="100%">
+                    {isLoading && (
+                      <Box>
+                        <Text mb={1} fontSize="xs">{status}</Text>
+                        <Progress size="xs" isIndeterminate colorScheme="blue" />
+                      </Box>
+                    )}
+  
+                    {error && (
+                      <Alert status="error" fontSize="xs">
+                        <AlertIcon />
+                        <Text>{error}</Text>
+                      </Alert>
+                    )}
+  
+                    <Box flex={1} overflowY="auto" ref={chatContainerRef}>
+                      <Heading as="h3" size="xs" mb={2}>Agent Conversation</Heading>
+                      <VStack spacing={2} align="stretch">
+                        {conversation.map((msg, index) => (
+                          <ChatMessage key={index} message={msg.message} sender={msg.sender} />
+                        ))}
+                      </VStack>
                     </Box>
-                  </Box>
-                )}
-              </Box>
+                  </VStack>
+                </CardBody>
+              </Card>
             </SimpleGrid>
-
+  
             {Object.keys(fileContents).length > 0 && (
-              <VStack spacing={6} align="stretch" mt={4}>
-                <Heading as="h2" size="lg" color={color}>Generated Content</Heading>
-                <SimpleGrid columns={[1, null, 2]} spacing={6}>
+              <VStack spacing={4} align="stretch" mt={4}>
+                <Heading as="h2" size="md" color={color}>Generated Content</Heading>
+                <SimpleGrid columns={[1, null, 2]} spacing={4}>
                   {Object.entries(fileContents).map(([key, content]) => (
                     <FilePreview
                       key={key}
@@ -371,10 +418,6 @@ const MarketingAIInterface = () => {
       </Box>
     </ChakraProvider>
   );
-};
-
-const formatLabel = (key) => {
-  return key.split(/(?=[A-Z])/).join(' ').replace(/^\w/, c => c.toUpperCase());
 };
 
 export default MarketingAIInterface;
