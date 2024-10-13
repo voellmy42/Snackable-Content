@@ -39,9 +39,10 @@ const BELL_BOY_AVATAR = "/bell-boy-avatar.jpg";
 const RESEARCHER_AVATAR = "/researcher-avatar.png";
 const WRITER_AVATAR = "/writer-avatar.png";
 const SOCIAL_MEDIA_AVATAR = "/social-media-avatar.png";
+const SYSTEM_NAME = "Mario Kondo";
 
 const ChatMessage = ({ message, sender, messageType }) => {
-  const isSystemAnnouncement = sender === 'System';
+  const isSystemAnnouncement = sender === SYSTEM_NAME;
   
   const systemColor = useColorModeValue("blue.100", "blue.700");
   const bellBoyColor = useColorModeValue("gray.100", "gray.700");
@@ -51,7 +52,7 @@ const ChatMessage = ({ message, sender, messageType }) => {
 
   const getBackgroundColor = (sender) => {
     const colors = {
-      'System': systemColor,
+      [SYSTEM_NAME]: systemColor,
       'Bell Boy': bellBoyColor,
       'Senior Researcher': researcherColor,
       'Blog Writer': writerColor,
@@ -65,7 +66,7 @@ const ChatMessage = ({ message, sender, messageType }) => {
   
   const getAvatarSrc = (sender) => {
     const avatars = {
-      'System': SYSTEM_AVATAR,
+      [SYSTEM_NAME]: SYSTEM_AVATAR,
       'Bell Boy': BELL_BOY_AVATAR,
       'Senior Researcher': RESEARCHER_AVATAR,
       'Blog Writer': WRITER_AVATAR,
@@ -103,12 +104,12 @@ const MarketingAIInterface = () => {
   const [error, setError] = useState(null);
   const [status, setStatus] = useState('');
   const [conversation, setConversation] = useState([
-    { sender: 'System', message: "Welcome to Snackable Content! Here's a preview of how our AI agents will collaborate to create your content." },
+    { sender: SYSTEM_NAME, message: "Welcome to Snackable Content! Here's a preview of how our AI agents will collaborate to create your content." },
     { sender: 'Bell Boy', message: "Hello! I'm the Bell Boy, and I'll be coordinating our AI agents to create your content." },
-    { sender: 'Senior Researcher', message: "Hello! I'm Richard the researcher. I can research offline or online." },
+    { sender: 'Senior Researcher', message: "Hello! I'm Richard the researcher. I conduct Off- or Online research." },
     { sender: 'Blog Writer', message: "Hi! My name is Will and I am your personal ghostwriter in any language." },
     { sender: 'Social Media Manager', message: "Howdy! I am Rudy and I love creating snackable social media content." },
-    { sender: 'System', message: "Once you fill in the details and hit 'Generate', you'll see our agents in action!" },
+    { sender: SYSTEM_NAME, message: "Once you fill in the details and hit 'Generate', you'll see our agents in action!" },
   ]);
   
   const { colorMode, toggleColorMode } = useColorMode();
@@ -148,7 +149,7 @@ const MarketingAIInterface = () => {
   
     setConversation(prev => [
       ...prev,
-      { sender: 'System', message: "The agents are now working on your content. Here's their conversation:" }
+      { sender: SYSTEM_NAME, message: "The agents are now working on your content. Here's their conversation:" }
     ]);
   
     lines.forEach(line => {
@@ -189,7 +190,7 @@ const MarketingAIInterface = () => {
       setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim(), messageType }]);
     }
   
-    setConversation(prev => [...prev, { sender: 'System', message: "The agents have completed their work on your content." }]);
+    setConversation(prev => [...prev, { sender: SYSTEM_NAME, message: "The agents have completed their work on your content." }]);
   };
 
   const handleSubmit = async (e) => {
