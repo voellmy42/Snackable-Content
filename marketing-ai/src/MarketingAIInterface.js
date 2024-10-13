@@ -1,60 +1,15 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { ChakraProvider, extendTheme, Box, VStack, HStack, Heading, Text, Input, Textarea, Button, Checkbox, useColorMode, useColorModeValue, Progress, Alert, AlertIcon, SimpleGrid, Container, Avatar, Step, StepDescription, StepIcon, StepIndicator, StepNumber, StepSeparator, StepStatus, StepTitle, Stepper, Card, CardBody } from "@chakra-ui/react";
+import { ChakraProvider, Box, VStack, HStack, Heading, Text, Input, Textarea, Button, Checkbox, useColorMode, useColorModeValue, Progress, Alert, AlertIcon, SimpleGrid, Container, Avatar, Step, StepDescription, StepIcon, StepIndicator, StepNumber, StepSeparator, StepStatus, StepTitle, Stepper, Card, CardBody } from "@chakra-ui/react";
 import { SunIcon, MoonIcon } from '@chakra-ui/icons';
 import axios from 'axios';
 import FilePreview from './FilePreview';
 
 const API_URL = 'http://localhost:5001';
 
-const SYSTEM_AVATAR = "mario-kondo-avatar.png";
+const AI_AVATAR = "/ai-avatar.png";
 const RESEARCHER_AVATAR = "/researcher-avatar.png";
 const WRITER_AVATAR = "/writer-avatar.png";
 const SOCIAL_MEDIA_AVATAR = "/social-media-avatar.png";
-
-const theme = extendTheme({
-  fonts: {
-    heading: "'Poppins', sans-serif",
-    body: "'Open Sans', sans-serif",
-  },
-  colors: {
-    brand: {
-      50: "#e6eef0",  // Very light shade of the dark color
-      100: "#c1d5d9", // Light shade of the dark color
-      200: "#97b7be", // Medium-light shade of the dark color
-      300: "#6d99a3", // Medium shade of the dark color
-      400: "#437b88", // Medium-dark shade of the dark color
-      500: "#0f4c59", // Primary dark, calm color
-      600: "#0c3e49", // Slightly darker shade of the primary color
-      700: "#092f38", // Even darker shade of the primary color
-      800: "#061f26", // Very dark shade of the primary color
-      900: "#031015", // Darkest shade of the primary color
-    },
-    accent: {
-      50: "#fde8ec",  // Very light shade of the accent color
-      100: "#f9bbc7", // Light shade of the accent color
-      200: "#f58ea2", // Medium-light shade of the accent color
-      300: "#f1617d", // Medium shade of the accent color
-      400: "#ed3458", // Medium-dark shade of the accent color
-      500: "#d91a3e", // Primary accent color
-      600: "#ae1532", // Slightly darker shade of the accent color
-      700: "#821026", // Even darker shade of the accent color
-      800: "#570a19", // Very dark shade of the accent color
-      900: "#2b050d", // Darkest shade of the accent color
-    },
-    highlight: {
-      50: "#f7f9e5",  // Very light shade of the light calm color
-      100: "#eaefb8", // Light shade of the light calm color
-      200: "#dde58b", // Medium-light shade of the light calm color
-      300: "#d3de74", // Primary light calm color
-      400: "#c6d44d", // Slightly darker shade of the light calm color
-      500: "#b9ca26", // Medium shade of the bright color
-      600: "#8fbf28", // Primary bright color
-      700: "#6b8f1e", // Darker shade of the bright color
-      800: "#476014", // Very dark shade of the bright color
-      900: "#23300a", // Darkest shade of the bright color
-    },
-  },
-});
 
 const ChatMessage = ({ message, sender }) => {
   const bgColor = useColorModeValue(
@@ -62,43 +17,30 @@ const ChatMessage = ({ message, sender }) => {
     sender === 'Researcher' ? "green.100" :
     sender === 'Writer' ? "purple.100" :
     sender === 'Social Media Manager' ? "orange.100" :
-    "gray.100",
+    sender === 'Final Answer' ? "pink.100" : "gray.100",
     sender === 'System' ? "blue.700" : 
     sender === 'Researcher' ? "green.700" :
     sender === 'Writer' ? "purple.700" :
     sender === 'Social Media Manager' ? "orange.700" :
-    "gray.700"
+    sender === 'Final Answer' ? "pink.700" : "gray.700"
   );
   const textColor = useColorModeValue("gray.800", "white");
-  
-  const isFinalAnswer = message.startsWith("Final Answer:");
-  const actualSender = isFinalAnswer ? sender :
-    message.includes("Researcher:") ? "Researcher" :
-    message.includes("Writer:") ? "Writer" :
-    message.includes("Social Media Manager:") ? "Social Media Manager" :
-    sender;
-
-  const avatarSrc = 
-    actualSender === 'Researcher' ? RESEARCHER_AVATAR :
-    actualSender === 'Writer' ? WRITER_AVATAR :
-    actualSender === 'Social Media Manager' ? SOCIAL_MEDIA_AVATAR :
-    SYSTEM_AVATAR;
-
-  const displayName = actualSender === 'System' ? 'Mario Kondo' : actualSender;
-
-  const displayMessage = isFinalAnswer ? message : message.replace(/^(Researcher:|Writer:|Social Media Manager:)\s*/, '');
+  const avatarSrc = sender === 'Researcher' ? RESEARCHER_AVATAR :
+                    sender === 'Writer' ? WRITER_AVATAR :
+                    sender === 'Social Media Manager' ? SOCIAL_MEDIA_AVATAR :
+                    AI_AVATAR;
 
   return (
-    <Box display="flex" justifyContent={actualSender === 'System' ? "center" : "flex-start"} mb={3} width="100%">
-      <Box maxWidth={actualSender === 'System' ? "100%" : "80%"} display="flex" flexDirection="row">
-        {actualSender !== 'System' && (
+    <Box display="flex" justifyContent={sender === 'System' ? "center" : "flex-start"} mb={3} width="100%">
+      <Box maxWidth={sender === 'System' ? "100%" : "80%"} display="flex" flexDirection="row">
+        {sender !== 'System' && (
           <Avatar src={avatarSrc} mr={2} size="sm" />
         )}
         <Box bg={bgColor} p={2} borderRadius="lg" color={textColor} width="100%">
-          {actualSender !== 'System' && (
-            <Text fontWeight="bold" mb={1} fontSize="xs">{displayName}</Text>
+          {sender !== 'System' && (
+            <Text fontWeight="bold" mb={1} fontSize="sm">{sender}</Text>
           )}
-          <Text whiteSpace="pre-wrap" wordBreak="break-word" fontSize="xs">{displayMessage}</Text>
+          <Text whiteSpace="pre-wrap" wordBreak="break-word" fontSize="sm">{message}</Text>
         </Box>
       </Box>
     </Box>
@@ -135,9 +77,7 @@ const MarketingAIInterface = () => {
   const color = useColorModeValue("gray.800", "white");
   const cardBgColor = useColorModeValue("white", "gray.700");
   const inputBgColor = useColorModeValue("white", "gray.700");
-  const inputBorderColor = useColorModeValue("gray.200", "gray.600");
-  const errorBgColor = useColorModeValue("accent.100", "accent.900");
-  const errorTextColor = useColorModeValue("accent.800", "accent.100");
+  const inputBorderColor = useColorModeValue("gray.300", "gray.600");
 
   const setInputRef = useCallback(element => {
     inputRef.current = element;
@@ -152,7 +92,7 @@ const MarketingAIInterface = () => {
     const lines = output.split('\n');
     let currentSpeaker = 'System';
     let currentMessage = '';
-
+  
     const cleanMessage = (msg) => {
       return msg
         .replace(/\[\d+m/g, '')
@@ -161,12 +101,12 @@ const MarketingAIInterface = () => {
         .replace(/^\s*\d+\s*/, '')
         .trim();
     };
-
+  
     setConversation(prev => [
       ...prev,
       { sender: 'System', message: "The agents are now working on your content. Here's their conversation:" }
     ]);
-
+  
     lines.forEach(line => {
       const cleanLine = cleanMessage(line);
       if (line.includes('Agent:')) {
@@ -180,13 +120,15 @@ const MarketingAIInterface = () => {
       } else if (line.includes('Final Answer:')) {
         if (currentMessage) {
           setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim() }]);
+          currentMessage = '';
         }
-        currentMessage = `Final Answer: ${cleanLine.replace('Final Answer:', '').trim()}`;
+        currentSpeaker = 'Final Answer';
+        currentMessage = cleanLine.replace('Final Answer:', '').trim();
       } else if (cleanLine) {
         currentMessage += cleanLine + ' ';
       }
     });
-
+  
     if (currentMessage) {
       setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim() }]);
     }
@@ -290,18 +232,13 @@ const MarketingAIInterface = () => {
   useEffect(() => {
     const scrollToBottom = () => {
       if (chatContainerRef.current) {
-        const scrollHeight = chatContainerRef.current.scrollHeight;
-        const height = chatContainerRef.current.clientHeight;
-        const maxScrollTop = scrollHeight - height;
-        chatContainerRef.current.scrollTop = maxScrollTop > 0 ? maxScrollTop : 0;
+        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
       }
     };
   
     scrollToBottom();
     // Use a setTimeout to ensure scrolling happens after the DOM has updated
-    const timeoutId = setTimeout(scrollToBottom, 100);
-  
-    return () => clearTimeout(timeoutId);
+    setTimeout(scrollToBottom, 0);
   }, [conversation]);
 
   useEffect(() => {
@@ -346,28 +283,17 @@ const MarketingAIInterface = () => {
   }, []);
 
   return (
-    <ChakraProvider theme={theme}>
+    <ChakraProvider>
       <Box minHeight="100vh" bg={bgColor} color={color} py={4}>
         <Container maxWidth="1400px">
-          <VStack spacing={6} align="stretch">
-            <HStack justify="space-between" align="center">
-              <Heading as="h1" size="xl" color="brand.500">Snackable Content</Heading>
-              <Button 
-                onClick={toggleColorMode} 
-                size="md" 
-                leftIcon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
-                colorScheme="brand"
-                variant="outline"
-              >
-                {colorMode === 'light' ? 'Dark' : 'Light'} Mode
-              </Button>
-            </HStack>
-            
-            <Progress value={(currentStep / (steps.length - 1)) * 100} size="sm" colorScheme="highlight" />
-  
-            <SimpleGrid columns={[1, null, 2]} spacing={6} height="600px">
+          <VStack spacing={4} align="stretch">
+            <Heading as="h1" size="xl" textAlign="center">Snackable Content</Heading>
+            <Button onClick={toggleColorMode} alignSelf="flex-end" size="sm">
+              {colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
+            </Button>
+            <SimpleGrid columns={[1, null, 2]} spacing={4}>
               <VStack spacing={4} align="stretch" height="100%">
-                <Stepper index={currentStep} orientation="vertical" gap={2} flex="0 0 auto" colorScheme="brand">
+                <Stepper index={currentStep} orientation="vertical" gap={2}>
                   {steps.map((step, index) => (
                     <Step key={index}>
                       <StepIndicator>
@@ -378,19 +304,17 @@ const MarketingAIInterface = () => {
                         />
                       </StepIndicator>
                       <Box flexShrink="0">
-                        <StepTitle fontSize="md">{step.title}</StepTitle>
-                        <StepDescription fontSize="sm">{step.description}</StepDescription>
+                        <StepTitle fontSize="sm">{step.title}</StepTitle>
+                        <StepDescription fontSize="xs">{step.description}</StepDescription>
                       </Box>
                       <StepSeparator />
                     </Step>
                   ))}
                 </Stepper>
-                <Card boxShadow="md" borderRadius="lg" flex={1} overflow="auto" bg={cardBgColor}>
-                  <CardBody py={4} px={6}>
-                    <VStack spacing={4} align="stretch" height="100%">
-                      <Text fontWeight="bold" fontSize="lg" color="brand.500">
-                        {formatLabel(Object.keys(inputs)[currentStep])}
-                      </Text>
+                <Card bg={cardBgColor} boxShadow="md" borderRadius="lg" flex={1}>
+                  <CardBody py={3} display="flex" flexDirection="column" height="100%">
+                    <VStack spacing={3} align="stretch" flex={1}>
+                      <Text fontWeight="bold" fontSize="sm">{formatLabel(Object.keys(inputs)[currentStep])}</Text>
                       {Object.entries(inputs).map(([key, value], index) => (
                         <Box key={key} display={index === currentStep ? 'block' : 'none'} flex={1}>
                           {key === 'description' ? (
@@ -401,11 +325,11 @@ const MarketingAIInterface = () => {
                               onChange={handleInputChange}
                               onKeyDown={handleKeyDown}
                               placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
-                              size="md"
-                              rows={4}
                               bg={inputBgColor}
                               borderColor={inputBorderColor}
-                              _focus={{ borderColor: "brand.500", boxShadow: "0 0 0 1px #0f4c59" }}
+                              size="sm"
+                              rows={2}
+                              height="100%"
                             />
                           ) : key === 'useOnlineResearch' ? (
                             <Checkbox
@@ -413,8 +337,7 @@ const MarketingAIInterface = () => {
                               name={key}
                               isChecked={value}
                               onChange={handleInputChange}
-                              size="lg"
-                              colorScheme="brand"
+                              size="sm"
                             >
                               Use Online Research
                             </Checkbox>
@@ -426,38 +349,23 @@ const MarketingAIInterface = () => {
                               onChange={handleInputChange}
                               onKeyDown={handleKeyDown}
                               placeholder={`Enter ${formatLabel(key).toLowerCase()}...`}
-                              size="md"
                               bg={inputBgColor}
                               borderColor={inputBorderColor}
-                              _focus={{ borderColor: "brand.500", boxShadow: "0 0 0 1px #0f4c59" }}
+                              size="sm"
                             />
                           )}
                         </Box>
                       ))}
-                      <HStack justify="space-between" mt="auto">
-                        <Button 
-                          onClick={handleBack} 
-                          disabled={currentStep === 0} 
-                          size="md" 
-                          variant="outline"
-                          colorScheme="brand"
-                        >
+                      <HStack justify="flex-start" mt="auto" spacing={2}>
+                        <Button onClick={handleBack} disabled={currentStep === 0} size="sm">
                           Back
                         </Button>
                         {currentStep === steps.length - 1 ? (
-                          <Button 
-                            onClick={handleSubmit} 
-                            colorScheme="highlight" 
-                            isLoading={isLoading} 
-                            loadingText="Generating..." 
-                            size="md"
-                          >
+                          <Button onClick={handleSubmit} colorScheme="blue" isLoading={isLoading} loadingText="Generating..." size="sm">
                             Generate
                           </Button>
                         ) : (
-                          <Button onClick={handleNext} size="md" colorScheme="brand">
-                            Next
-                          </Button>
+                          <Button onClick={handleNext} size="sm">Next</Button>
                         )}
                       </HStack>
                     </VStack>
@@ -465,26 +373,25 @@ const MarketingAIInterface = () => {
                 </Card>
               </VStack>
               
-              <Card boxShadow="md" borderRadius="lg" height="100%" overflow="auto" bg={cardBgColor}>
-                <CardBody p={4}>
-                  <VStack spacing={3} align="stretch" height="100%">
+              <Card bg={cardBgColor} boxShadow="md" borderRadius="lg" height="100%">
+                <CardBody p={3} display="flex" flexDirection="column" height="100%">
+                  <VStack spacing={2} align="stretch" height="100%">
                     {isLoading && (
                       <Box>
-                        <Text mb={1} fontSize="sm" fontWeight="bold">{status}</Text>
-                        <Progress size="xs" isIndeterminate colorScheme="highlight" />
+                        <Text mb={1} fontSize="xs">{status}</Text>
+                        <Progress size="xs" isIndeterminate colorScheme="blue" />
                       </Box>
                     )}
   
                     {error && (
-                      <Alert status="error" borderRadius="md" bg={errorBgColor}>
-                        <AlertIcon color="accent.500" />
-                        <Text fontSize="sm" color={errorTextColor}>{error}</Text>
+                      <Alert status="error" fontSize="xs">
+                        <AlertIcon />
+                        <Text>{error}</Text>
                       </Alert>
                     )}
-  
-                    <Box flex={1} overflowY="auto" ref={chatContainerRef}>
-                      <Heading as="h3" size="md" mb={4} color="brand.500">Agent Conversation</Heading>
-                      <VStack spacing={3} align="stretch">
+                    <Box height="400px" overflowY="auto" ref={chatContainerRef}>
+                      <Heading as="h3" size="xs" mb={2}>Agent Conversation</Heading>
+                      <VStack spacing={2} align="stretch">
                         {conversation.map((msg, index) => (
                           <ChatMessage key={index} message={msg.message} sender={msg.sender} />
                         ))}
@@ -497,7 +404,7 @@ const MarketingAIInterface = () => {
   
             {Object.keys(fileContents).length > 0 && (
               <VStack spacing={4} align="stretch" mt={4}>
-                <Heading as="h2" size="lg" color="brand.500">Generated Content</Heading>
+                <Heading as="h2" size="md" color={color}>Generated Content</Heading>
                 <SimpleGrid columns={[1, null, 2]} spacing={4}>
                   {Object.entries(fileContents).map(([key, content]) => (
                     <FilePreview

@@ -1,70 +1,120 @@
-# Getting Started with Create React App
+# Marketing AI Crew
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Marketing AI Crew is a powerful tool that leverages CrewAI to generate marketing content using a team of AI agents. This project combines a Flask backend, React frontend, and CrewAI to create a user-friendly interface for content generation.
 
-## Available Scripts
+## Table of Contents
+1. [Project Overview](#project-overview)
+2. [Prerequisites](#prerequisites)
+3. [Installation](#installation)
+4. [Project Structure](#project-structure)
+5. [Running the Application](#running-the-application)
+6. [Customizing the AI Crew](#customizing-the-ai-crew)
+7. [API Endpoints](#api-endpoints)
+8. [Frontend Components](#frontend-components)
+9. [Troubleshooting](#troubleshooting)
 
-In the project directory, you can run:
+## Project Overview
 
-### `npm start`
+The Marketing AI Crew project consists of three main components:
+1. A Flask backend that manages the CrewAI integration and serves API endpoints.
+2. A React frontend that provides a user interface for interacting with the AI crew.
+3. A CrewAI setup that defines agents and tasks for content generation.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Prerequisites
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- Python 3.10 or higher
+- Node.js 14.0 or higher
+- npm 6.0 or higher
 
-### `npm test`
+## Installation
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+1. Clone the repository:
+   ```
+   git clone https://github.com/your-username/marketing-ai-crew.git
+   cd marketing-ai-crew
+   ```
 
-### `npm run build`
+2. Set up the backend:
+   ```
+   cd backend
+   python -m venv venv
+   source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+   pip install -r requirements.txt
+   ```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+3. Set up the frontend:
+   ```
+   cd ../frontend
+   npm install
+   ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+4. Create a `.env` file in the `backend` directory and add your API keys:
+   ```
+   OPENAI_API_KEY=your_openai_api_key
+   PERPLEXITY_API_KEY=your_perplexity_api_key
+   ```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Project Structure
 
-### `npm run eject`
+```
+marketing-ai-crew/
+├── backend/
+│   ├── app.py
+│   ├── marketing_ai/
+│   │   ├── crew.py
+│   │   ├── config/
+│   │   │   ├── agents.yaml
+│   │   │   └── tasks.yaml
+│   ├── requirements.txt
+│   └── .env
+├── frontend/
+│   ├── src/
+│   │   ├── MarketingAIInterface.js
+│   │   └── FilePreview.js
+│   ├── package.json
+│   └── ...
+└── README.md
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Running the Application
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+1. Start the backend server:
+   ```
+   cd backend
+   python app.py
+   ```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+2. In a new terminal, start the frontend development server:
+   ```
+   cd frontend
+   npm start
+   ```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+3. Open your browser and navigate to `http://localhost:3000` to use the application.
 
-## Learn More
+## Customizing the AI Crew
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+To customize the AI agents and tasks:
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+1. Modify `backend/marketing_ai/config/agents.yaml` to define your agents.
+2. Modify `backend/marketing_ai/config/tasks.yaml` to define your tasks.
+3. Update `backend/marketing_ai/crew.py` to add your own logic, tools, and specific arguments.
 
-### Code Splitting
+## API Endpoints
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+- POST `/api/generate`: Initiates content generation
+- GET `/api/stream`: Streams real-time updates during content generation
+- GET `/api/output/<filename>`: Retrieves generated content files
 
-### Analyzing the Bundle Size
+## Frontend Components
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+- `MarketingAIInterface.js`: Main component that handles user input and displays results
+- `FilePreview.js`: Component for previewing and downloading generated content
 
-### Making a Progressive Web App
+## Troubleshooting
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+- If you encounter CORS issues, ensure that the `CORS` configuration in `app.py` matches your frontend URL.
+- Make sure all required environment variables are set in the `.env` file.
+- Check the console logs in both the backend terminal and browser developer tools for error messages.
 
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+For additional support or questions, please open an issue on the GitHub repository.
