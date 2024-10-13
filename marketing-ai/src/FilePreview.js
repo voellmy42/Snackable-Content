@@ -1,10 +1,11 @@
 import React from 'react';
-import { Box, Button, Text, useClipboard, VStack, useColorModeValue } from "@chakra-ui/react";
+import { Box, Button, Text, useClipboard, VStack, useColorModeValue, useTheme } from "@chakra-ui/react";
 
 const FilePreview = ({ fileName, content, bg, borderColor }) => {
   const { hasCopied, onCopy } = useClipboard(content);
-  const contentBgColor = useColorModeValue("gray.50", "gray.600");
-  const textColor = useColorModeValue("gray.800", "white");
+  const theme = useTheme();
+  const contentBgColor = useColorModeValue("brand.light", "gray.700");
+  const textColor = useColorModeValue("brand.dark", "white");
 
   const handleDownload = () => {
     const blob = new Blob([content], { type: 'text/plain' });
@@ -21,14 +22,21 @@ const FilePreview = ({ fileName, content, bg, borderColor }) => {
   };
 
   return (
-    <Box borderWidth="1px" borderRadius="lg" p={4} borderColor={borderColor} bg={bg} boxShadow="md">
+    <Box 
+      borderWidth="1px" 
+      borderRadius="lg" 
+      p={4} 
+      borderColor={borderColor} 
+      bg={bg} 
+      boxShadow="md"
+    >
       <Text fontWeight="bold" mb={2} fontSize="lg" color={textColor}>{fileName}</Text>
       <Box 
         bg={contentBgColor} 
         p={4} 
         borderRadius="md" 
         overflow="auto" 
-        maxHeight="400px" // Increased from 200px
+        maxHeight="400px"
         mb={4}
         fontSize="sm"
         fontFamily="monospace"
@@ -51,10 +59,22 @@ const FilePreview = ({ fileName, content, bg, borderColor }) => {
         </pre>
       </Box>
       <VStack spacing={2} align="stretch">
-        <Button onClick={onCopy} colorScheme="blue" size="sm">
+        <Button 
+          onClick={onCopy} 
+          bg="brand.bright" 
+          color="brand.dark" 
+          _hover={{ bg: "brand.light" }} 
+          size="sm"
+        >
           {hasCopied ? "Copied!" : "Copy"}
         </Button>
-        <Button onClick={handleDownload} colorScheme="green" size="sm">
+        <Button 
+          onClick={handleDownload} 
+          bg="brand.dark" 
+          color="white" 
+          _hover={{ bg: "brand.light", color: "brand.dark" }} 
+          size="sm"
+        >
           Download
         </Button>
       </VStack>

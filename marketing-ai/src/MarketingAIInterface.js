@@ -1,10 +1,22 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { ChakraProvider, Box, VStack, HStack, Heading, Text, Input, Textarea, Button, Checkbox, useColorMode, useColorModeValue, Progress, Alert, AlertIcon, SimpleGrid, Container, Avatar, Step, StepDescription, StepIcon, StepIndicator, StepNumber, StepSeparator, StepStatus, StepTitle, Stepper, Card, CardBody } from "@chakra-ui/react";
 import { SunIcon, MoonIcon } from '@chakra-ui/icons';
+import { extendTheme } from "@chakra-ui/react";
 import axios from 'axios';
 import FilePreview from './FilePreview';
 
 const API_URL = 'http://localhost:5001';
+
+const theme = extendTheme({
+  colors: {
+    brand: {
+      dark: "#0f4c59",
+      bright: "#8fbf28",
+      light: "#d3de74",
+      accent: "#d91a3e",
+    },
+  },
+});
 
 const AI_AVATAR = "/ai-avatar.png";
 const RESEARCHER_AVATAR = "/researcher-avatar.png";
@@ -31,16 +43,16 @@ const ChatMessage = ({ message, sender }) => {
                     AI_AVATAR;
 
   return (
-    <Box display="flex" justifyContent={sender === 'System' ? "center" : "flex-start"} mb={3} width="100%">
+    <Box display="flex" justifyContent={sender === 'System' ? "center" : "flex-start"} mb={2} width="100%">
       <Box maxWidth={sender === 'System' ? "100%" : "80%"} display="flex" flexDirection="row">
         {sender !== 'System' && (
-          <Avatar src={avatarSrc} mr={2} size="sm" />
+          <Avatar src={avatarSrc} mr={2} size="xs" />
         )}
-        <Box bg={bgColor} p={2} borderRadius="lg" color={textColor} width="100%">
+        <Box bg={bgColor} p={1} borderRadius="lg" color={textColor} width="100%">
           {sender !== 'System' && (
-            <Text fontWeight="bold" mb={1} fontSize="sm">{sender}</Text>
+            <Text fontWeight="bold" mb={0.5} fontSize="xs">{sender}</Text>
           )}
-          <Text whiteSpace="pre-wrap" wordBreak="break-word" fontSize="sm">{message}</Text>
+          <Text whiteSpace="pre-wrap" wordBreak="break-word" fontSize="xs">{message}</Text>
         </Box>
       </Box>
     </Box>
@@ -73,11 +85,11 @@ const MarketingAIInterface = () => {
   const eventSourceRef = useRef(null);
   const inputRef = useRef(null);
 
-  const bgColor = useColorModeValue("gray.50", "gray.900");
-  const color = useColorModeValue("gray.800", "white");
-  const cardBgColor = useColorModeValue("white", "gray.700");
+  const bgColor = useColorModeValue("white", "gray.900");
+  const color = useColorModeValue("brand.dark", "white");
+  const cardBgColor = useColorModeValue("white", "gray.800");
   const inputBgColor = useColorModeValue("white", "gray.700");
-  const inputBorderColor = useColorModeValue("gray.300", "gray.600");
+  const inputBorderColor = useColorModeValue("brand.dark", "brand.light");
 
   const setInputRef = useCallback(element => {
     inputRef.current = element;
@@ -283,11 +295,11 @@ const MarketingAIInterface = () => {
   }, []);
 
   return (
-    <ChakraProvider>
+    <ChakraProvider theme={theme}>
       <Box minHeight="100vh" bg={bgColor} color={color} py={4}>
         <Container maxWidth="1400px">
           <VStack spacing={4} align="stretch">
-            <Heading as="h1" size="xl" textAlign="center">Snackable Content</Heading>
+            <Heading as="h1" size="xl" textAlign="center" color="brand.dark">Snackable Content</Heading>
             <Button onClick={toggleColorMode} alignSelf="flex-end" size="sm">
               {colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
             </Button>
@@ -361,9 +373,17 @@ const MarketingAIInterface = () => {
                           Back
                         </Button>
                         {currentStep === steps.length - 1 ? (
-                          <Button onClick={handleSubmit} colorScheme="blue" isLoading={isLoading} loadingText="Generating..." size="sm">
-                            Generate
-                          </Button>
+                          <Button 
+                          onClick={handleSubmit} 
+                          bg="brand.light"
+                          color="brand.dark"
+                          _hover={{ bg: "brand.bright", color: "white" }}
+                          isLoading={isLoading} 
+                          loadingText="Generating..." 
+                          size="sm"
+                        >
+                          Generate
+                        </Button>
                         ) : (
                           <Button onClick={handleNext} size="sm">Next</Button>
                         )}
@@ -379,7 +399,7 @@ const MarketingAIInterface = () => {
                     {isLoading && (
                       <Box>
                         <Text mb={1} fontSize="xs">{status}</Text>
-                        <Progress size="xs" isIndeterminate colorScheme="blue" />
+                        <Progress size="xs" isIndeterminate colorScheme="brand" />
                       </Box>
                     )}
   
