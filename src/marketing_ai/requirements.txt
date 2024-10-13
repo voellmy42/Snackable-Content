@@ -1,0 +1,7 @@
+flask
+flask-cors
+flask-caching
+gunicorn
+python-dotenv
+requests
+# Add any other dependencies your backend uses
