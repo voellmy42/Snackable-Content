@@ -16,6 +16,22 @@ const theme = extendTheme({
       accent: "#d91a3e",
     },
   },
+  components: {
+    Stepper: {
+      baseStyle: (props) => ({
+        indicator: {
+          borderColor: props.colorMode === "dark" ? "brand.light" : "brand.dark",
+        },
+        separator: {
+          borderColor: props.colorMode === "dark" ? "brand.light" : "brand.dark",
+        },
+        stepIconContainer: {
+          bg: props.colorMode === "dark" ? "brand.dark" : "brand.light",
+          borderColor: props.colorMode === "dark" ? "brand.light" : "brand.dark",
+        },
+      }),
+    },
+  },
 });
 
 const AI_AVATAR = "/ai-avatar.png";

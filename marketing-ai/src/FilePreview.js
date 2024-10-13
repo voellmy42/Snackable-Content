@@ -1,10 +1,11 @@
 import React from 'react';
 import { Box, Button, Text, useClipboard, VStack, useColorModeValue, useTheme } from "@chakra-ui/react";
+import ReactMarkdown from 'react-markdown';
 
 const FilePreview = ({ fileName, content, bg, borderColor }) => {
   const { hasCopied, onCopy } = useClipboard(content);
   const theme = useTheme();
-  const contentBgColor = useColorModeValue("brand.light", "gray.700");
+  const contentBgColor = useColorModeValue("white", "gray.700");
   const textColor = useColorModeValue("brand.dark", "white");
 
   const handleDownload = () => {
@@ -39,14 +40,13 @@ const FilePreview = ({ fileName, content, bg, borderColor }) => {
         maxHeight="400px"
         mb={4}
         fontSize="sm"
-        fontFamily="monospace"
         color={textColor}
         sx={{
           '&::-webkit-scrollbar': {
             width: '8px',
           },
           '&::-webkit-scrollbar-track': {
-            background: useColorModeValue('gray.100', 'gray.700'),
+            background: useColorModeValue('gray.100', 'gray.600'),
           },
           '&::-webkit-scrollbar-thumb': {
             background: useColorModeValue('gray.300', 'gray.500'),
@@ -54,16 +54,14 @@ const FilePreview = ({ fileName, content, bg, borderColor }) => {
           },
         }}
       >
-        <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-          <code>{content}</code>
-        </pre>
+        <ReactMarkdown>{content}</ReactMarkdown>
       </Box>
       <VStack spacing={2} align="stretch">
         <Button 
           onClick={onCopy} 
-          bg="brand.bright" 
+          bg="brand.light" 
           color="brand.dark" 
-          _hover={{ bg: "brand.light" }} 
+          _hover={{ bg: "brand.bright", color: "white" }} 
           size="sm"
         >
           {hasCopied ? "Copied!" : "Copy"}
@@ -72,7 +70,7 @@ const FilePreview = ({ fileName, content, bg, borderColor }) => {
           onClick={handleDownload} 
           bg="brand.dark" 
           color="white" 
-          _hover={{ bg: "brand.light", color: "brand.dark" }} 
+          _hover={{ bg: "brand.bright", color: "white" }} 
           size="sm"
         >
           Download
