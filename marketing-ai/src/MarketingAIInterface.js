@@ -34,40 +34,54 @@ const theme = extendTheme({
   },
 });
 
-const AI_AVATAR = "/ai-avatar.png";
+const SYSTEM_AVATAR = "/mario-kondo-avatar.png";
+const BELL_BOY_AVATAR = "/bell-boy-avatar.jpg";
 const RESEARCHER_AVATAR = "/researcher-avatar.png";
 const WRITER_AVATAR = "/writer-avatar.png";
 const SOCIAL_MEDIA_AVATAR = "/social-media-avatar.png";
 
-const ChatMessage = ({ message, sender }) => {
-  const bgColor = useColorModeValue(
-    sender === 'System' ? "blue.100" : 
-    sender === 'Researcher' ? "green.100" :
-    sender === 'Writer' ? "purple.100" :
-    sender === 'Social Media Manager' ? "orange.100" :
-    sender === 'Final Answer' ? "pink.100" : "gray.100",
-    sender === 'System' ? "blue.700" : 
-    sender === 'Researcher' ? "green.700" :
-    sender === 'Writer' ? "purple.700" :
-    sender === 'Social Media Manager' ? "orange.700" :
-    sender === 'Final Answer' ? "pink.700" : "gray.700"
-  );
+const ChatMessage = ({ message, sender, messageType }) => {
+  const isSystemAnnouncement = sender === 'System';
+  
+  const systemColor = useColorModeValue("blue.100", "blue.700");
+  const bellBoyColor = useColorModeValue("gray.100", "gray.700");
+  const researcherColor = useColorModeValue("green.100", "green.700");
+  const writerColor = useColorModeValue("purple.100", "purple.700");
+  const socialMediaColor = useColorModeValue("yellow.100", "yellow.700");
+
+  const getBackgroundColor = (sender) => {
+    const colors = {
+      'System': systemColor,
+      'Bell Boy': bellBoyColor,
+      'Senior Researcher': researcherColor,
+      'Blog Writer': writerColor,
+      'Social Media Manager': socialMediaColor
+    };
+    return colors[sender] || bellBoyColor; // Default to Bell Boy color if sender not found
+  };
+
+  const bgColor = getBackgroundColor(sender);
   const textColor = useColorModeValue("gray.800", "white");
-  const avatarSrc = sender === 'Researcher' ? RESEARCHER_AVATAR :
-                    sender === 'Writer' ? WRITER_AVATAR :
-                    sender === 'Social Media Manager' ? SOCIAL_MEDIA_AVATAR :
-                    AI_AVATAR;
+  
+  const getAvatarSrc = (sender) => {
+    const avatars = {
+      'System': SYSTEM_AVATAR,
+      'Bell Boy': BELL_BOY_AVATAR,
+      'Senior Researcher': RESEARCHER_AVATAR,
+      'Blog Writer': WRITER_AVATAR,
+      'Social Media Manager': SOCIAL_MEDIA_AVATAR
+    };
+    return avatars[sender] || BELL_BOY_AVATAR; // Default to Bell Boy avatar if sender not found
+  };
+
+  const avatarSrc = getAvatarSrc(sender);
 
   return (
-    <Box display="flex" justifyContent={sender === 'System' ? "center" : "flex-start"} mb={2} width="100%">
-      <Box maxWidth={sender === 'System' ? "100%" : "80%"} display="flex" flexDirection="row">
-        {sender !== 'System' && (
-          <Avatar src={avatarSrc} mr={2} size="xs" />
-        )}
+    <Box display="flex" justifyContent={isSystemAnnouncement ? "flex-end" : "flex-start"} mb={2} width="100%">
+      <Box maxWidth="80%" display="flex" flexDirection={isSystemAnnouncement ? "row-reverse" : "row"}>
+        <Avatar src={avatarSrc} mr={isSystemAnnouncement ? 0 : 2} ml={isSystemAnnouncement ? 2 : 0} size="xs" />
         <Box bg={bgColor} p={1} borderRadius="lg" color={textColor} width="100%">
-          {sender !== 'System' && (
-            <Text fontWeight="bold" mb={0.5} fontSize="xs">{sender}</Text>
-          )}
+          <Text fontWeight="bold" mb={0.5} fontSize="xs">{sender}{messageType ? ` (${messageType})` : ''}</Text>
           <Text whiteSpace="pre-wrap" wordBreak="break-word" fontSize="xs">{message}</Text>
         </Box>
       </Box>
@@ -90,10 +104,11 @@ const MarketingAIInterface = () => {
   const [status, setStatus] = useState('');
   const [conversation, setConversation] = useState([
     { sender: 'System', message: "Welcome to Snackable Content! Here's a preview of how our AI agents will collaborate to create your content." },
-    { sender: 'Researcher', message: "Hello! I'm Richard the research specialist. I am responsible to research your topic through offline or online research." },
-    { sender: 'Writer', message: "Hi! My name is Will and i am your personal ghostwriter. I am responsible to create engaging blog post posts that resonate with your target audience. I am also a language talent, so feel free to request any language" },
-    { sender: 'Social Media Manager', message: "Howdy! I am Rudy and I love creating social media content. My task is to transform the research into high quality snackable content that you can use on social media." },
-    { sender: 'System', message: "Once you fill in the details and hit 'Generate', you'll see us in action here!" },
+    { sender: 'Bell Boy', message: "Hello! I'm the Bell Boy, and I'll be coordinating our AI agents to create your content." },
+    { sender: 'Senior Researcher', message: "Hello! I'm Richard the researcher. I can research offline or online." },
+    { sender: 'Blog Writer', message: "Hi! My name is Will and I am your personal ghostwriter in any language." },
+    { sender: 'Social Media Manager', message: "Howdy! I am Rudy and I love creating snackable social media content." },
+    { sender: 'System', message: "Once you fill in the details and hit 'Generate', you'll see our agents in action!" },
   ]);
   
   const { colorMode, toggleColorMode } = useColorMode();
@@ -118,8 +133,9 @@ const MarketingAIInterface = () => {
 
   const processOutput = (output) => {
     const lines = output.split('\n');
-    let currentSpeaker = 'System';
+    let currentSpeaker = 'Bell Boy';
     let currentMessage = '';
+    let messageType = '';
   
     const cleanMessage = (msg) => {
       return msg
@@ -139,28 +155,40 @@ const MarketingAIInterface = () => {
       const cleanLine = cleanMessage(line);
       if (line.includes('Agent:')) {
         if (currentMessage) {
-          setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim() }]);
+          setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim(), messageType }]);
           currentMessage = '';
+          messageType = '';
         }
-        currentSpeaker = cleanLine.replace('Agent:', '').trim();
+        currentSpeaker = 'Bell Boy';
+        messageType = 'Calling Agent';
+        currentMessage = cleanLine.replace('Agent:', '').trim();
       } else if (line.includes('Task:')) {
-        setConversation(prev => [...prev, { sender: 'System', message: cleanLine.replace('Task:', '').trim() }]);
+        if (currentMessage) {
+          setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim(), messageType }]);
+          currentMessage = '';
+          messageType = '';
+        }
+        currentSpeaker = 'Bell Boy';
+        messageType = 'Assigning Task';
+        currentMessage = cleanLine.replace('Task:', '').trim();
       } else if (line.includes('Final Answer:')) {
         if (currentMessage) {
-          setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim() }]);
+          setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim(), messageType }]);
           currentMessage = '';
+          messageType = '';
         }
-        currentSpeaker = 'Final Answer';
-        currentMessage = cleanLine.replace('Final Answer:', '').trim();
+        currentSpeaker = 'Blog Writer'; // Always use Blog Writer for Final Answer
+        messageType = 'Final Answer';
+        currentMessage = cleanLine.split(':').slice(1).join(':').trim();
       } else if (cleanLine) {
         currentMessage += cleanLine + ' ';
       }
     });
   
     if (currentMessage) {
-      setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim() }]);
+      setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim(), messageType }]);
     }
-
+  
     setConversation(prev => [...prev, { sender: 'System', message: "The agents have completed their work on your content." }]);
   };
 

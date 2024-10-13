@@ -1,10 +1,8 @@
 import React from 'react';
-import { Box, Button, Text, useClipboard, VStack, useColorModeValue, useTheme } from "@chakra-ui/react";
-import ReactMarkdown from 'react-markdown';
+import { Box, Button, Text, useClipboard, VStack, useColorModeValue } from "@chakra-ui/react";
 
 const FilePreview = ({ fileName, content, bg, borderColor }) => {
   const { hasCopied, onCopy } = useClipboard(content);
-  const theme = useTheme();
   const contentBgColor = useColorModeValue("white", "gray.700");
   const textColor = useColorModeValue("brand.dark", "white");
 
@@ -20,6 +18,23 @@ const FilePreview = ({ fileName, content, bg, borderColor }) => {
     URL.revokeObjectURL(url);
     
     console.log(`${fileName} has been downloaded`);
+  };
+
+  const renderMarkdown = (text) => {
+    const lines = text.split('\n');
+    return lines.map((line, index) => {
+      if (line.startsWith('# ')) {
+        return <Text key={index} fontSize="2xl" fontWeight="bold" mb={2}>{line.slice(2)}</Text>;
+      } else if (line.startsWith('## ')) {
+        return <Text key={index} fontSize="xl" fontWeight="bold" mb={2}>{line.slice(3)}</Text>;
+      } else if (line.startsWith('### ')) {
+        return <Text key={index} fontSize="lg" fontWeight="bold" mb={2}>{line.slice(4)}</Text>;
+      } else if (line.startsWith('- ')) {
+        return <Text key={index} ml={4} mb={1}>• {line.slice(2)}</Text>;
+      } else {
+        return <Text key={index} mb={2}>{line}</Text>;
+      }
+    });
   };
 
   return (
@@ -54,7 +69,7 @@ const FilePreview = ({ fileName, content, bg, borderColor }) => {
           },
         }}
       >
-        <ReactMarkdown>{content}</ReactMarkdown>
+        {renderMarkdown(content)}
       </Box>
       <VStack spacing={2} align="stretch">
         <Button 
