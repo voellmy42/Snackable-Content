@@ -1,6 +1,7 @@
 import React from 'react';
-import { Box, Button, Text, useClipboard, VStack, useColorModeValue, UnorderedList, OrderedList, ListItem, Link } from "@chakra-ui/react";
+import { Box, Button, Text, useClipboard, VStack, useColorModeValue, UnorderedList, OrderedList, ListItem, Link, Code } from "@chakra-ui/react";
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const FilePreview = ({ fileName, content, bg, borderColor }) => {
   const { hasCopied, onCopy } = useClipboard(content);
@@ -31,7 +32,7 @@ const FilePreview = ({ fileName, content, bg, borderColor }) => {
     li: (props) => <ListItem mb={1} {...props} />,
     a: (props) => <Link color="blue.500" textDecoration="underline" isExternal {...props} />,
     blockquote: (props) => <Box borderLeft="4px" borderColor="gray.300" pl={4} py={2} my={2} {...props} />,
-    code: (props) => <Box as="code" bg="gray.100" p={1} borderRadius="sm" {...props} />,
+    code: (props) => <Code p={1} borderRadius="sm" {...props} />,
     pre: (props) => <Box as="pre" bg="gray.100" p={2} borderRadius="md" overflowX="auto" my={2} {...props} />,
   };
 
@@ -67,7 +68,10 @@ const FilePreview = ({ fileName, content, bg, borderColor }) => {
           },
         }}
       >
-        <ReactMarkdown components={MarkdownComponents}>
+        <ReactMarkdown 
+          components={MarkdownComponents}
+          remarkPlugins={[remarkGfm]}
+        >
           {content}
         </ReactMarkdown>
       </Box>

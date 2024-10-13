@@ -35,33 +35,46 @@ const theme = extendTheme({
 });
 
 const SYSTEM_AVATAR = "/mario-kondo-avatar.png";
+const BELL_BOY_AVATAR = "/bell-boy-avatar.jpg";
 const RESEARCHER_AVATAR = "/researcher-avatar.png";
 const WRITER_AVATAR = "/writer-avatar.png";
 const SOCIAL_MEDIA_AVATAR = "/social-media-avatar.png";
 
-const ChatMessage = ({ message, sender }) => {
-  const isSystemAdmin = sender === 'System';
+const ChatMessage = ({ message, sender, messageType }) => {
+  const isSystemAnnouncement = sender === 'System';
   const bgColor = useColorModeValue(
-    isSystemAdmin ? "blue.100" : "gray.100",
-    isSystemAdmin ? "blue.700" : "gray.700"
+    isSystemAnnouncement ? "blue.100" : "gray.100",
+    isSystemAnnouncement ? "blue.700" : "gray.700"
   );
   const textColor = useColorModeValue("gray.800", "white");
-  const avatarSrc = 
-    sender === 'System' ? SYSTEM_AVATAR :
-    sender === 'Researcher' ? RESEARCHER_AVATAR :
-    sender === 'Writer' ? WRITER_AVATAR :
-    sender === 'Social Media Manager' ? SOCIAL_MEDIA_AVATAR :
-    sender === 'Blog Writer' ? WRITER_AVATAR :
-    SYSTEM_AVATAR; // fallback to system avatar
+  
+  let avatarSrc;
+  switch(sender) {
+    case 'System':
+      avatarSrc = SYSTEM_AVATAR;
+      break;
+    case 'Bell Boy':
+      avatarSrc = BELL_BOY_AVATAR;
+      break;
+    case 'Senior Researcher':
+      avatarSrc = RESEARCHER_AVATAR;
+      break;
+    case 'Blog Writer':
+      avatarSrc = WRITER_AVATAR;
+      break;
+    case 'Social Media Manager':
+      avatarSrc = SOCIAL_MEDIA_AVATAR;
+      break;
+    default:
+      avatarSrc = BELL_BOY_AVATAR;
+  }
 
   return (
-    <Box display="flex" justifyContent={isSystemAdmin ? "flex-end" : "flex-start"} mb={2} width="100%">
-      <Box maxWidth="80%" display="flex" flexDirection={isSystemAdmin ? "row-reverse" : "row"}>
-        <Avatar src={avatarSrc} mr={isSystemAdmin ? 0 : 2} ml={isSystemAdmin ? 2 : 0} size="xs" />
+    <Box display="flex" justifyContent={isSystemAnnouncement ? "flex-end" : "flex-start"} mb={2} width="100%">
+      <Box maxWidth="80%" display="flex" flexDirection={isSystemAnnouncement ? "row-reverse" : "row"}>
+        <Avatar src={avatarSrc} mr={isSystemAnnouncement ? 0 : 2} ml={isSystemAnnouncement ? 2 : 0} size="xs" />
         <Box bg={bgColor} p={1} borderRadius="lg" color={textColor} width="100%">
-          {!isSystemAdmin && (
-            <Text fontWeight="bold" mb={0.5} fontSize="xs">{sender}</Text>
-          )}
+          <Text fontWeight="bold" mb={0.5} fontSize="xs">{sender}{messageType ? ` (${messageType})` : ''}</Text>
           <Text whiteSpace="pre-wrap" wordBreak="break-word" fontSize="xs">{message}</Text>
         </Box>
       </Box>
@@ -84,10 +97,9 @@ const MarketingAIInterface = () => {
   const [status, setStatus] = useState('');
   const [conversation, setConversation] = useState([
     { sender: 'System', message: "Welcome to Snackable Content! Here's a preview of how our AI agents will collaborate to create your content." },
-    { sender: 'Researcher', message: "Hello! I'm Richard the research specialist. I am responsible to research your topic through offline or online research." },
-    { sender: 'Writer', message: "Hi! My name is Will and i am your personal ghostwriter. I am responsible to create engaging blog post posts that resonate with your target audience. I am also a language talent, so feel free to request any language" },
-    { sender: 'Social Media Manager', message: "Howdy! I am Rudy and I love creating social media content. My task is to transform the research into high quality snackable content that you can use on social media." },
-    { sender: 'System', message: "Once you fill in the details and hit 'Generate', you'll see us in action here!" },
+    { sender: 'Bell Boy', message: "Hello! I'm the Bell Boy, and I'll be coordinating our AI agents to create your content." },
+    { sender: 'Bell Boy', message: "I'll be calling upon our Senior Researcher, Blog Writer, and Social Media Manager to work on your request." },
+    { sender: 'System', message: "Once you fill in the details and hit 'Generate', you'll see our agents in action!" },
   ]);
   
   const { colorMode, toggleColorMode } = useColorMode();
@@ -112,8 +124,9 @@ const MarketingAIInterface = () => {
 
   const processOutput = (output) => {
     const lines = output.split('\n');
-    let currentSpeaker = 'System';
+    let currentSpeaker = 'Bell Boy';
     let currentMessage = '';
+    let messageType = '';
   
     const cleanMessage = (msg) => {
       return msg
@@ -133,28 +146,40 @@ const MarketingAIInterface = () => {
       const cleanLine = cleanMessage(line);
       if (line.includes('Agent:')) {
         if (currentMessage) {
-          setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim() }]);
+          setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim(), messageType }]);
           currentMessage = '';
+          messageType = '';
         }
-        currentSpeaker = cleanLine.replace('Agent:', '').trim();
+        currentSpeaker = 'Bell Boy';
+        messageType = 'Calling Agent';
+        currentMessage = cleanLine.replace('Agent:', '').trim();
       } else if (line.includes('Task:')) {
-        setConversation(prev => [...prev, { sender: 'System', message: cleanLine.replace('Task:', '').trim() }]);
+        if (currentMessage) {
+          setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim(), messageType }]);
+          currentMessage = '';
+          messageType = '';
+        }
+        currentSpeaker = 'Bell Boy';
+        messageType = 'Assigning Task';
+        currentMessage = cleanLine.replace('Task:', '').trim();
       } else if (line.includes('Final Answer:')) {
         if (currentMessage) {
-          setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim() }]);
+          setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim(), messageType }]);
           currentMessage = '';
+          messageType = '';
         }
-        currentSpeaker = 'Final Answer';
-        currentMessage = cleanLine.replace('Final Answer:', '').trim();
+        currentSpeaker = cleanLine.split(':')[0].trim();
+        messageType = 'Final Answer';
+        currentMessage = cleanLine.split(':').slice(1).join(':').trim();
       } else if (cleanLine) {
         currentMessage += cleanLine + ' ';
       }
     });
   
     if (currentMessage) {
-      setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim() }]);
+      setConversation(prev => [...prev, { sender: currentSpeaker, message: currentMessage.trim(), messageType }]);
     }
-
+  
     setConversation(prev => [...prev, { sender: 'System', message: "The agents have completed their work on your content." }]);
   };
 
@@ -423,7 +448,12 @@ const MarketingAIInterface = () => {
                       <Heading as="h3" size="xs" mb={2}>Agent Conversation</Heading>
                       <VStack spacing={2} align="stretch">
                         {conversation.map((msg, index) => (
-                          <ChatMessage key={index} message={msg.message} sender={msg.sender} />
+                          <ChatMessage 
+                            key={index} 
+                            message={msg.message} 
+                            sender={msg.sender} 
+                            messageType={msg.messageType}
+                          />
                         ))}
                       </VStack>
                     </Box>
